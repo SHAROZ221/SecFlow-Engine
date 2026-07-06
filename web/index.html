@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentinelFlow - SOAR Dashboard</title>
+  <!-- Google Fonts Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="glow-bg"></div>
+  <header>
+    <div class="logo">
+      <span class="icon">⚡</span>
+      <h1>SentinelFlow</h1>
+      <span class="badge">SOAR Engine v1.1</span>
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    <!-- LEFT PANEL: Alert Ingestion -->
+    <section class="card glass alert-ingestion">
+      <div class="card-header">
+        <h2>Ingest Alert</h2>
+        <p>Trigger automated SOAR playbooks</p>
+      </div>
+
+      <div class="form-group">
+        <label for="preset-select">Alert Presets</label>
+        <select id="preset-select" onchange="loadPreset()">
+          <option value="">-- Custom Alert --</option>
+          <option value="bruteforce">SSH Brute Force (High Severity IP)</option>
+          <option value="tor">Tor Exit Node Detection (Critical IP)</option>
+          <option value="portscan">Host Portscan (Low Severity IP)</option>
+        </select>
+      </div>
+
+      <hr class="separator">
+
+      <form id="alert-form" onsubmit="triggerPlaybook(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="alert_id">Alert ID</label>
+            <input type="text" id="alert_id" required value="ALRT-1042">
+          </div>
+          <div class="form-group">
+            <label for="source">Source</label>
+            <input type="text" id="source" required value="Wazuh">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="rule_description">Rule Description</label>
+          <input type="text" id="rule_description" required value="Multiple failed SSH logins from external IP">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="indicator_value">Indicator (IP)</label>
+            <input type="text" id="indicator_value" required value="185.220.101.45">
+          </div>
+          <div class="form-group">
+            <label for="affected_host">Affected Host</label>
+            <input type="text" id="affected_host" required value="web-srv-03">
+          </div>
+        </div>
+
+        <div class="form-row form-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">Live Containment</span>
+            <label class="switch">
+              <input type="checkbox" id="live_contain">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn primary-btn">
+          <span>Run Playbook</span>
+          <span class="loader-spinner hidden"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- CENTER PANEL: Pipeline Tracker & Terminal -->
+    <section class="card glass pipeline-tracker">
+      <div class="card-header">
+        <h2>Playbook Execution</h2>
+        <p id="execution-subtitle">Waiting for trigger...</p>
+      </div>
+
+      <div class="pipeline-container">
+        <!-- Step 1: Enrich -->
+        <div class="pipeline-step" id="step-enrich">
+          <div class="step-status pending">
+            <span class="step-number">1</span>
+            <span class="step-icon hidden">✓</span>
+          </div>
+          <div class="step-details">
+            <h3>Enrich Observables</h3>
+            <p class="step-desc">Analyze IP reputation via AbuseIPDB</p>
+            <div class="step-output" id="out-enrich"></div>
+          </div>
+        </div>
+
+        <div class="pipeline-connector" id="conn-enrich"></div>
+
+        <!-- Step 2: Decide -->
+        <div class="pipeline-step" id="step-decide">
+          <div class="step-status pending">
+            <span class="step-number">2</span>
+            <span class="step-icon hidden">✓</span>
+          </div>
+          <div class="step-details">
+            <h3>Decide Severity</h3>
+            <p class="step-desc">Evaluate threat scores against thresholds</p>
+            <div class="step-output" id="out-decide"></div>
+          </div>
+        </div>
+
+        <div class="pipeline-connector" id="conn-decide"></div>
+
+        <!-- Step 3: Contain -->
+        <div class="pipeline-step" id="step-contain">
+          <div class="step-status pending">
+            <span class="step-number">3</span>
+            <span class="step-icon hidden">✓</span>
+          </div>
+          <div class="step-details">
+            <h3>Containment response</h3>
+            <p class="step-desc">Isolate host/block IP using EDR/Firewall rules</p>
+            <div class="step-output" id="out-contain"></div>
+          </div>
+        </div>
+
+        <div class="pipeline-connector" id="conn-contain"></div>
+
+        <!-- Step 4: Ticket -->
+        <div class="pipeline-step" id="step-ticket">
+          <div class="step-status pending">
+            <span class="step-number">4</span>
+            <span class="step-icon hidden">✓</span>
+          </div>
+          <div class="step-details">
+            <h3>Open Incident Ticket</h3>
+            <p class="step-desc">Log case details in SQLite ticket queue</p>
+            <div class="step-output" id="out-ticket"></div>
+          </div>
+        </div>
+
+        <div class="pipeline-connector" id="conn-ticket"></div>
+
+        <!-- Step 5: Notify -->
+        <div class="pipeline-step" id="step-notify">
+          <div class="step-status pending">
+            <span class="step-number">5</span>
+            <span class="step-icon hidden">✓</span>
+          </div>
+          <div class="step-details">
+            <h3>Send Notifications</h3>
+            <p class="step-desc">Broadcast alerts to Telegram bot SOC channel</p>
+            <div class="step-output" id="out-notify"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realtime console output logs -->
+      <div class="console-log">
+        <div class="console-header">
+          <span>CONSOLE LOGS</span>
+          <span class="pulse-indicator hidden"></span>
+        </div>
+        <div class="console-body" id="console-body">
+          <div class="console-placeholder">Playbook output terminal. Logs will stream here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Ticket Table -->
+    <section class="card glass ticketing-queue">
+      <div class="card-header">
+        <div class="header-action-row">
+          <div>
+            <h2>Ticketing Center</h2>
+            <p>SQLite cases database queue</p>
+          </div>
+          <button onclick="refreshTickets()" class="btn btn-icon" title="Refresh Tickets">🔄</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="tickets-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Alert</th>
+              <th>IP / Host</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-body">
+            <tr>
+              <td colspan="6" class="table-placeholder">Loading tickets queue...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const PRESETS = {
+      bruteforce: {
+        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+        source: "Wazuh",
+        rule_description: "Multiple failed SSH logins from external IP",
+        indicator_value: "185.220.101.45",
+        affected_host: "web-srv-03",
+        raw_severity: "high"
+      },
+      tor: {
+        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+        source: "Suricata",
+        rule_description: "Inbound Tor Exit Node connection detected",
+        // Preset IP value triggers critical behavior for mock API or test score
+        indicator_value: "198.51.100.150", 
+        affected_host: "db-prod-01",
+        raw_severity: "critical"
+      },
+      portscan: {
+        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+        source: "Snort",
+        rule_description: "External network reconnaissance / portscan",
+        indicator_value: "8.8.8.8",
+        affected_host: "firewall-gw",
+        raw_severity: "low"
+      }
+    };
+
+    function loadPreset() {
+      const select = document.getElementById("preset-select");
+      const val = select.value;
+      if (!val || !PRESETS[val]) return;
+
+      const preset = PRESETS[val];
+      document.getElementById("alert_id").value = preset.alert_id;
+      document.getElementById("source").value = preset.source;
+      document.getElementById("rule_description").value = preset.rule_description;
+      document.getElementById("indicator_value").value = preset.indicator_value;
+      document.getElementById("affected_host").value = preset.affected_host;
+    }
+
+    // Refresh tickets queue
+    async function refreshTickets() {
+      try {
+        const response = await fetch("/api/tickets");
+        const tickets = await response.json();
+        const tbody = document.getElementById("tickets-body");
+        tbody.innerHTML = "";
+
+        if (tickets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="table-placeholder">No tickets in database.</td></tr>`;
+          return;
+        }
+
+        tickets.forEach(t => {
+          const tr = document.createElement("tr");
+          
+          let severityClass = "sev-low";
+          if (t.severity === "critical") severityClass = "sev-critical";
+          else if (t.severity === "medium") severityClass = "sev-medium";
+          
+          const statusClass = t.status === "open" ? "status-open" : "status-resolved";
+          const isResolved = t.status === "resolved";
+
+          tr.innerHTML = `
+            <td>#${t.id}</td>
+            <td>
+              <div class="table-title">${t.alert_id}</div>
+              <div class="table-desc">${t.summary.split('|')[0] || t.summary}</div>
+            </td>
+            <td>
+              <div>${t.indicator}</div>
+              <div class="table-desc">Host: ${t.summary.includes('host') ? t.summary.split('host ')[1].split(':')[0] : 'N/A'}</div>
+            </td>
+            <td><span class="badge-severity ${severityClass}">${t.severity}</span></td>
+            <td><span class="badge-status ${statusClass}">${t.status}</span></td>
+            <td>
+              ${isResolved ? '<span class="action-done">Resolved ✓</span>' : `<button class="btn btn-sm btn-resolve" onclick="resolveTicket(${t.id})">Resolve</button>`}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Error fetching tickets:", err);
+      }
+    }
+
+    async function resolveTicket(ticketId) {
+      try {
+        const resp = await fetch(`/api/tickets/${ticketId}/resolve`, { method: "POST" });
+        const result = await resp.json();
+        if (result.status === "success") {
+          refreshTickets();
+        }
+      } catch (err) {
+        console.error("Error resolving ticket:", err);
+      }
+    }
+
+    // Reset pipeline step UI
+    function resetPipelineUI() {
+      const stepIds = ["enrich", "decide", "contain", "ticket", "notify"];
+      stepIds.forEach(id => {
+        const stepEl = document.getElementById(`step-${id}`);
+        const statusEl = stepEl.querySelector(".step-status");
+        statusEl.className = "step-status pending";
+        statusEl.querySelector(".step-number").classList.remove("hidden");
+        statusEl.querySelector(".step-icon").classList.add("hidden");
+        
+        const outputEl = document.getElementById(`out-${id}`);
+        outputEl.innerHTML = "";
+        outputEl.classList.remove("visible");
+
+        const connEl = document.getElementById(`conn-${id}`);
+        if (connEl) connEl.className = "pipeline-connector";
+      });
+      
+      const consoleBody = document.getElementById("console-body");
+      consoleBody.innerHTML = "";
+    }
+
+    // Set step UI status
+    function setStepStatus(stepId, status, data = null) {
+      const stepEl = document.getElementById(`step-${stepId}`);
+      if (!stepEl) return;
+
+      const statusEl = stepEl.querySelector(".step-status");
+      const numberEl = statusEl.querySelector(".step-number");
+      const iconEl = statusEl.querySelector(".step-icon");
+      const outputEl = document.getElementById(`out-${stepId}`);
+      const connEl = document.getElementById(`conn-${stepId}`);
+
+      // Reset
+      numberEl.classList.add("hidden");
+      iconEl.classList.add("hidden");
+
+      if (status === "running") {
+        statusEl.className = "step-status running";
+        numberEl.classList.remove("hidden");
+      } else if (status === "success") {
+        statusEl.className = "step-status success";
+        iconEl.classList.remove("hidden");
+        iconEl.innerText = "✓";
+        if (connEl) connEl.className = "pipeline-connector success";
+        
+        if (data) {
+          outputEl.classList.add("visible");
+          if (stepId === "enrich") {
+            outputEl.innerHTML = `<strong>IP:</strong> ${data.ip} | <strong>Score:</strong> ${data.abuseConfidenceScore}% | <strong>ISP:</strong> ${data.isp}`;
+          } else if (stepId === "decide") {
+            outputEl.innerHTML = `<strong>Severity:</strong> <span class="text-${data.severity}">${data.severity.toUpperCase()}</span>`;
+          } else if (stepId === "contain") {
+            outputEl.innerHTML = `<strong>Action:</strong> Host Isolated | <strong>Command:</strong> <code>${data.command}</code>`;
+          } else if (stepId === "ticket") {
+            outputEl.innerHTML = `<strong>Ticket ID:</strong> #${data.ticket_id} | <strong>Status:</strong> ${data.status}`;
+          } else if (stepId === "notify") {
+            outputEl.innerHTML = `<strong>SOC Alert:</strong> Channel Dispatched`;
+          }
+        }
+      } else if (status === "skipped") {
+        statusEl.className = "step-status skipped";
+        iconEl.classList.remove("hidden");
+        iconEl.innerText = "↷";
+        if (connEl) connEl.className = "pipeline-connector skipped";
+        if (data && data.reason) {
+          outputEl.classList.add("visible");
+          outputEl.innerHTML = `<span class="text-skipped">Skipped: ${data.reason}</span>`;
+        }
+      } else if (status === "failed") {
+        statusEl.className = "step-status failed";
+        iconEl.classList.remove("hidden");
+        iconEl.innerText = "✗";
+        if (connEl) connEl.className = "pipeline-connector failed";
+        if (data && data.error) {
+          outputEl.classList.add("visible");
+          outputEl.innerHTML = `<span class="text-failed">Error: ${data.error}</span>`;
+        }
+      }
+    }
+
+    async function triggerPlaybook(event) {
+      event.preventDefault();
+      resetPipelineUI();
+
+      const btn = document.getElementById("submit-btn");
+      const spinner = btn.querySelector(".loader-spinner");
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+
+      document.querySelector(".pulse-indicator").classList.remove("hidden");
+      document.getElementById("execution-subtitle").innerText = "Executing Playbook steps...";
+
+      const payload = {
+        alert_id: document.getElementById("alert_id").value,
+        source: document.getElementById("source").value,
+        rule_description: document.getElementById("rule_description").value,
+        indicator_type: "ip",
+        indicator_value: document.getElementById("indicator_value").value,
+        affected_host: document.getElementById("affected_host").value,
+        live_contain: document.getElementById("live_contain").checked,
+        raw_severity: "high"
+      };
+
+      try {
+        // Trigger playbook execution
+        const response = await fetch("/api/alerts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const runId = data.run_id;
+
+        // Establish Server-Sent Events stream
+        const eventSource = new EventSource(`/api/runs/${runId}/stream`);
+        const consoleBody = document.getElementById("console-body");
+        let activeStep = "";
+
+        eventSource.onmessage = function(event) {
+          const line = event.data;
+          
+          // Print logs in terminal window
+          const div = document.createElement("div");
+          div.className = "log-line";
+          
+          if (line.startsWith("[-]")) {
+            div.classList.add("log-err");
+          } else if (line.startsWith("[+]")) {
+            div.classList.add("log-ok");
+          }
+          div.innerText = line.replace("__COMPLETED__:", "").replace("__FAILED__:", "");
+          consoleBody.appendChild(div);
+          consoleBody.scrollTop = consoleBody.scrollHeight;
+
+          // Track steps and map status
+          if (line.includes("Step 'enrich'")) {
+            activeStep = "enrich";
+            setStepStatus("enrich", "running");
+          } else if (line.includes("Step 'decide'")) {
+            activeStep = "decide";
+            setStepStatus("decide", "running");
+          } else if (line.includes("Step 'contain'")) {
+            activeStep = "contain";
+            setStepStatus("contain", "running");
+          } else if (line.includes("Step 'ticket'")) {
+            activeStep = "ticket";
+            setStepStatus("ticket", "running");
+          } else if (line.includes("Step 'notify'")) {
+            activeStep = "notify";
+            setStepStatus("notify", "running");
+          }
+
+          // Check dynamic execution completions in streamed payload
+          if (line.startsWith("__COMPLETED__:")) {
+            eventSource.close();
+            const runLog = JSON.parse(line.replace("__COMPLETED__:", ""));
+            
+            // Map final statuses to each pipeline node
+            Object.keys(runLog.steps).forEach(stepId => {
+              const stepResult = runLog.steps[stepId];
+              if (stepResult.status === "success") {
+                setStepStatus(stepId, "success", stepResult);
+              } else if (stepResult.status === "skipped") {
+                setStepStatus(stepId, "skipped", stepResult);
+              } else if (stepResult.status === "failed") {
+                setStepStatus(stepId, "failed", stepResult);
+              }
+            });
+
+            document.getElementById("execution-subtitle").innerText = "Execution completed successfully.";
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+            document.querySelector(".pulse-indicator").classList.add("hidden");
+            
+            refreshTickets();
+          } else if (line.startsWith("__FAILED__:")) {
+            eventSource.close();
+            document.getElementById("execution-subtitle").innerText = "Execution failed.";
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+            document.querySelector(".pulse-indicator").classList.add("hidden");
+            
+            if (activeStep) {
+              setStepStatus(activeStep, "failed", { error: line.replace("__FAILED__:", "") });
+            }
+          }
+        };
+
+        eventSource.onerror = function() {
+          eventSource.close();
+          btn.disabled = false;
+          spinner.classList.add("hidden");
+          document.querySelector(".pulse-indicator").classList.add("hidden");
+        };
+
+      } catch (err) {
+        console.error("Error executing playbook:", err);
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+      }
+    }
+
+    // Initial load
+    window.onload = function() {
+      refreshTickets();
+    };
+  </script>
+</body>
+</html>
