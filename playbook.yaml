@@ -1,0 +1,34 @@
+name: malicious_ip_response
+description: >
+  Automated response playbook for alerts flagging a suspicious/malicious
+  source IP. Enriches the IP, decides severity based on abuse score,
+  contains high-severity hosts (dry-run by default), opens a ticket,
+  and notifies the SOC channel.
+
+trigger:
+  alert_field: "indicator_type"
+  alert_value: "ip"
+
+steps:
+  - id: enrich
+    action: enrich_ip
+    input_field: "indicator_value"
+
+  - id: decide
+    action: decide_severity
+    thresholds:
+      critical: 75   # abuseConfidenceScore >= 75
+      medium: 25     # abuseConfidenceScore >= 25
+
+  - id: contain
+    action: contain_host
+    condition: "severity == critical"
+    mode: dry_run    # dry_run | live
+
+  - id: ticket
+    action: open_ticket
+    always_run: true
+
+  - id: notify
+    action: send_notification
+    condition: "severity in [critical, medium]"

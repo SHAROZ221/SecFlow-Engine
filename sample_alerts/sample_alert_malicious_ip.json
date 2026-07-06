@@ -1,0 +1,10 @@
+{
+  "alert_id": "ALRT-1042",
+  "source": "Wazuh",
+  "rule_description": "Multiple failed SSH logins followed by successful login",
+  "timestamp": "2026-07-06T09:14:22Z",
+  "indicator_type": "ip",
+  "indicator_value": "185.220.101.45",
+  "affected_host": "web-srv-03",
+  "raw_severity": "high"
+}
