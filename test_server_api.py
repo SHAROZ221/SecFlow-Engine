@@ -1,12 +1,13 @@
 """
 test_server_api.py
-Verify the FastAPI backend endpoints, SQLite database, and playbook execution
+Verify the FastAPI backend endpoints, settings API, SQLite database, and playbook execution
 using FastAPI's TestClient to run tests entirely in memory and deadlock-free.
 """
 
 from fastapi.testclient import TestClient
 import json
 import time
+import os
 
 # Import FastAPI app from server
 from server import app
@@ -14,7 +15,37 @@ from server import app
 def test_flow():
     client = TestClient(app)
 
-    print("[+] Step 1: Ingesting mock alert...")
+    print("[+] Step 1: Testing Settings API (GET and POST)...")
+    
+    # 1. Fetch initial settings
+    resp_get = client.get("/api/settings")
+    assert resp_get.status_code == 200
+    init_settings = resp_get.json()
+    print(f"[+] Initial settings retrieved: {init_settings}")
+
+    # 2. Write new test settings
+    test_settings = {
+        "abuseipdb_api_key": "TESTAPIKEY123456789",
+        "telegram_bot_token": "TELEGRAMBOTTOKEN987654",
+        "telegram_chat_id": "-10022334455"
+    }
+    resp_post = client.post("/api/settings", json=test_settings)
+    assert resp_post.status_code == 200
+    print("[+] Test settings saved successfully.")
+
+    # 3. Read back to confirm masking
+    resp_get_new = client.get("/api/settings")
+    assert resp_get_new.status_code == 200
+    new_settings = resp_get_new.json()
+    print(f"[+] Retrieved masked settings: {new_settings}")
+    
+    # Verify masking pattern (first 4 characters, ..., last 4 characters)
+    assert new_settings["abuseipdb_api_key"] == "TEST...6789"
+    assert new_settings["telegram_bot_token"] == "TELE...7654"
+    assert new_settings["telegram_chat_id"] == "-10022334455"
+    print("[+] Masking verification passed.")
+
+    print("\n[+] Step 2: Ingesting alert to verify live API lookup attempt...")
     alert_payload = {
         "alert_id": "ALRT-9999",
         "source": "Wazuh-Test",
@@ -26,7 +57,7 @@ def test_flow():
         "live_contain": False
     }
 
-    # Make POST request to trigger playbook
+    # Trigger playbook run
     response = client.post("/api/alerts", json=alert_payload)
     if response.status_code != 200:
         print(f"[-] Ingest alert failed: {response.text}")
@@ -36,10 +67,41 @@ def test_flow():
     run_id = res.get("run_id")
     print(f"[+] Alert ingested successfully! Run ID: {run_id}")
 
-    print("\n[+] Step 2: Waiting 2 seconds for playbook background execution to finish...")
+    print("\n[+] Step 3: Waiting 2 seconds for playbook background execution to finish...")
     time.sleep(2)
 
-    print("\n[+] Step 3: Fetching SQLite tickets queue...")
+    # Clean up test settings from .env immediately so we don't leave bad keys
+    # By sending empty strings, we clear the keys
+    clear_settings = {
+        "abuseipdb_api_key": "",
+        "telegram_bot_token": "",
+        "telegram_chat_id": ""
+    }
+    client.post("/api/settings", json=clear_settings)
+    print("[+] Restored settings back to empty.")
+
+    # Verify run logs to ensure it attempted a live lookup (and failed due to invalid key)
+    # rather than falling back to the local mock driver.
+    # We inspect the saved JSON logs under evidence/
+    evidence_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence")
+    log_files = [f for f in os.listdir(evidence_dir) if f.startswith(f"run_ALRT-9999_")]
+    if not log_files:
+        print("[-] Playbook execution log file not found in evidence/.")
+        return False
+        
+    latest_log_path = os.path.join(evidence_dir, sorted(log_files)[-1])
+    with open(latest_log_path, "r") as f:
+        run_log = json.load(f)
+        
+    enrich_result = run_log["steps"]["enrich"]
+    print(f"[+] Enrichment source recorded in execution log: {enrich_result['source']}")
+    
+    # It must either succeed live (unlikely with dummy key) or report an error code,
+    # but it must NOT say "mock (no ABUSEIPDB_API_KEY set)".
+    assert "mock" not in enrich_result["source"]
+    print("[+] Dynamic config reloading and live fallback shift verified successfully!")
+
+    print("\n[+] Step 4: Fetching SQLite tickets queue...")
     response_tickets = client.get("/api/tickets")
     if response_tickets.status_code != 200:
         print(f"[-] Failed to fetch tickets: {response_tickets.text}")
@@ -50,7 +112,7 @@ def test_flow():
     ticket_id = latest_ticket.get("id")
     print(f"[+] Latest ticket in DB -> ID: #{ticket_id}, Alert: {latest_ticket.get('alert_id')}, Status: {latest_ticket.get('status')}")
 
-    print(f"\n[+] Step 4: Resolving ticket #{ticket_id}...")
+    print(f"\n[+] Step 5: Resolving ticket #{ticket_id}...")
     response_resolve = client.post(f"/api/tickets/{ticket_id}/resolve")
     if response_resolve.status_code != 200:
         print(f"[-] Failed to resolve ticket: {response_resolve.text}")
@@ -58,7 +120,7 @@ def test_flow():
         
     print(f"[+] Resolve API result: {response_resolve.json()}")
 
-    print("\n[+] Step 5: Double checking ticket resolution status...")
+    print("\n[+] Step 6: Double checking ticket resolution status...")
     response_tickets_final = client.get("/api/tickets")
     if response_tickets_final.status_code != 200:
         print(f"[-] Failed to re-fetch tickets: {response_tickets_final.text}")
@@ -69,7 +131,7 @@ def test_flow():
     print(f"[+] Checked ticket #{ticket_id} status -> {checked_ticket.get('status')}")
     
     if checked_ticket.get("status") == "resolved":
-        print("\n[++] ALL IN-MEMORY API TESTS PASSED SUCCESSFULLY! backend is fully operational.")
+        print("\n[++] ALL IN-MEMORY API AND INTEGRATION TESTS PASSED SUCCESSFULLY! backend is fully operational.")
         return True
     else:
         print("[-] Ticket status is not resolved.")

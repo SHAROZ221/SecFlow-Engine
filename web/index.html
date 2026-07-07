@@ -18,6 +18,14 @@
       <h1>SecFlow Engine</h1>
       <span class="badge">SOAR Engine v1.1</span>
     </div>
+    <div class="header-actions">
+      <button class="btn btn-icon btn-settings" onclick="openSettings()" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <main class="dashboard-grid">
@@ -212,6 +220,37 @@
       </div>
     </section>
   </main>
+
+  <!-- Settings Modal Overlay -->
+  <div id="settings-modal" class="modal-overlay hidden" onclick="handleOutsideClick(event)">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h2>Engine Integrations</h2>
+        <button class="btn-close-x" onclick="closeSettings()">&times;</button>
+      </div>
+      <form id="settings-form" onsubmit="saveSettings(event)">
+        <div class="form-group modal-group">
+          <label for="abuseipdb_api_key">AbuseIPDB API Key</label>
+          <input type="text" id="abuseipdb_api_key" placeholder="Enter key for live IOC enrichment...">
+        </div>
+        <div class="form-group modal-group">
+          <label for="telegram_bot_token">Telegram Bot Token</label>
+          <input type="text" id="telegram_bot_token" placeholder="Enter bot token for live notifications...">
+        </div>
+        <div class="form-group modal-group">
+          <label for="telegram_chat_id">Telegram Chat ID</label>
+          <input type="text" id="telegram_chat_id" placeholder="Enter chat or channel ID...">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+          <button type="submit" class="btn primary-btn btn-save-settings">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast-notification hidden"></div>
 
   <script>
     const PRESETS = {
@@ -514,6 +553,73 @@
         console.error("Error executing playbook:", err);
         btn.disabled = false;
         spinner.classList.add("hidden");
+      }
+    }
+
+    // Toast notification utility
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.className = `toast-notification ${isSuccess ? "toast-success" : "toast-error"}`;
+      toast.classList.remove("hidden");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 3000);
+    }
+
+    // Settings Modal interactions
+    async function openSettings() {
+      try {
+        const resp = await fetch("/api/settings");
+        const data = await resp.json();
+        
+        document.getElementById("abuseipdb_api_key").value = data.abuseipdb_api_key || "";
+        document.getElementById("telegram_bot_token").value = data.telegram_bot_token || "";
+        document.getElementById("telegram_chat_id").value = data.telegram_chat_id || "";
+        
+        document.getElementById("settings-modal").classList.remove("hidden");
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+        showToast("Failed to fetch settings from server.", false);
+      }
+    }
+
+    function closeSettings() {
+      document.getElementById("settings-modal").classList.add("hidden");
+    }
+
+    function handleOutsideClick(event) {
+      if (event.target === document.getElementById("settings-modal")) {
+        closeSettings();
+      }
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      
+      const payload = {
+        abuseipdb_api_key: document.getElementById("abuseipdb_api_key").value,
+        telegram_bot_token: document.getElementById("telegram_bot_token").value,
+        telegram_chat_id: document.getElementById("telegram_chat_id").value
+      };
+      
+      try {
+        const resp = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        
+        const res = await resp.json();
+        if (res.status === "success") {
+          showToast("Settings updated successfully!");
+          closeSettings();
+        } else {
+          showToast("Failed to update settings.", false);
+        }
+      } catch (err) {
+        console.error("Failed to save settings:", err);
+        showToast("Error communicating with server settings API.", false);
       }
     }
 

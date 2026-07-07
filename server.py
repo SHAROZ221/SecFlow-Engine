@@ -16,9 +16,21 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    import dotenv
+    dotenv.load_dotenv()
+except ImportError:
+    dotenv = None
+
 from main import run_playbook, load_yaml, save_run_log
 
 app = FastAPI(title="SOAR-Playbook Dashboard")
+
+class SettingsPayload(BaseModel):
+    abuseipdb_api_key: str = ""
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
 
 # Enable CORS for development convenience
 app.add_middleware(
@@ -37,6 +49,66 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR = os.path.join(BASE_DIR, "web")
 PLAYBOOK_PATH = os.path.join(BASE_DIR, "playbook.yaml")
 DB_PATH = os.path.join(BASE_DIR, "evidence", "tickets.db")
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+def get_env_settings():
+    if dotenv and os.path.exists(ENV_PATH):
+        dotenv.load_dotenv(ENV_PATH, override=True)
+    
+    abuse_key = os.getenv("ABUSEIPDB_API_KEY", "")
+    tg_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    tg_chat = os.getenv("TELEGRAM_CHAT_ID", "")
+    
+    def mask_key(k):
+        if not k:
+            return ""
+        if len(k) <= 8:
+            return "********"
+        return f"{k[:4]}...{k[-4:]}"
+        
+    return {
+        "abuseipdb_api_key": mask_key(abuse_key),
+        "telegram_bot_token": mask_key(tg_token),
+        "telegram_chat_id": tg_chat,
+    }
+
+def write_env_settings(payload: SettingsPayload):
+    lines = []
+    if os.path.exists(ENV_PATH):
+        with open(ENV_PATH, "r") as f:
+            lines = f.readlines()
+            
+    env_dict = {}
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            env_dict[k.strip()] = v.strip()
+            
+    new_abuse = payload.abuseipdb_api_key.strip()
+    if new_abuse and "..." not in new_abuse:
+        env_dict["ABUSEIPDB_API_KEY"] = new_abuse
+    elif not new_abuse:
+        env_dict.pop("ABUSEIPDB_API_KEY", None)
+        
+    new_tg_token = payload.telegram_bot_token.strip()
+    if new_tg_token and "..." not in new_tg_token:
+        env_dict["TELEGRAM_BOT_TOKEN"] = new_tg_token
+    elif not new_tg_token:
+        env_dict.pop("TELEGRAM_BOT_TOKEN", None)
+        
+    new_tg_chat = payload.telegram_chat_id.strip()
+    if new_tg_chat:
+        env_dict["TELEGRAM_CHAT_ID"] = new_tg_chat
+    else:
+        env_dict.pop("TELEGRAM_CHAT_ID", None)
+        
+    with open(ENV_PATH, "w") as f:
+        for k, v in env_dict.items():
+            f.write(f"{k}={v}\n")
+            
+    if dotenv:
+        dotenv.load_dotenv(ENV_PATH, override=True)
 
 
 class AlertPayload(BaseModel):
@@ -198,6 +270,23 @@ def resolve_ticket(ticket_id: int):
         return {"status": "success", "resolved_id": ticket_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+@app.get("/api/settings")
+def get_settings():
+    """Returns masked credentials stored in the local .env configuration."""
+    try:
+        return get_env_settings()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read settings: {e}")
+
+@app.post("/api/settings")
+def save_settings(payload: SettingsPayload):
+    """Saves credentials securely to .env and updates the current environment."""
+    try:
+        write_env_settings(payload)
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save settings: {e}")
 
 if __name__ == "__main__":
     import uvicorn

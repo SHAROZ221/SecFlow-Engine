@@ -9,8 +9,19 @@ the engine still runs end-to-end in a demo environment.
 import os
 import requests
 
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
+
 
 def send_notification(message: str) -> dict:
+    if dotenv:
+        # Load .env file relative to this file's parent folder
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        if os.path.exists(env_path):
+            dotenv.load_dotenv(env_path, override=True)
+            
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 

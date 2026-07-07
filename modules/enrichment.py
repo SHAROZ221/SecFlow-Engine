@@ -9,10 +9,21 @@ live credentials.
 import os
 import requests
 
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
+
 ABUSEIPDB_URL = "https://api.abuseipdb.com/api/v2/check"
 
 
 def enrich_ip(ip_address: str) -> dict:
+    if dotenv:
+        # Load .env file relative to this file's parent folder
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        if os.path.exists(env_path):
+            dotenv.load_dotenv(env_path, override=True)
+            
     api_key = os.getenv("ABUSEIPDB_API_KEY")
 
     if not api_key:
