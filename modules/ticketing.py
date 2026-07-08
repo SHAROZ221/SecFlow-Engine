@@ -34,6 +34,23 @@ def _init_db():
 
 def open_ticket(alert_id: str, indicator: str, severity: str, summary: str) -> dict:
     conn = _init_db()
+    
+    # Deduplication check: check if an open ticket for the same alert_id and indicator already exists
+    cursor = conn.execute(
+        "SELECT id, created_at FROM tickets WHERE alert_id = ? AND indicator = ? AND status = 'open'",
+        (alert_id, indicator)
+    )
+    row = cursor.fetchone()
+    if row:
+        ticket_id, created_at = row[0], row[1]
+        conn.close()
+        return {
+            "ticket_id": ticket_id,
+            "status": "open",
+            "created_at": created_at,
+            "merged": True
+        }
+
     created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     cur = conn.execute(
         "INSERT INTO tickets (alert_id, indicator, severity, status, created_at, summary) "
@@ -47,4 +64,5 @@ def open_ticket(alert_id: str, indicator: str, severity: str, summary: str) -> d
         "ticket_id": ticket_id,
         "status": "open",
         "created_at": created_at,
+        "merged": False
     }

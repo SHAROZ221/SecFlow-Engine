@@ -102,6 +102,11 @@ def safe_eval_condition(expression: str, context: dict) -> bool:
                 return False
             elif node.id == "None":
                 return None
+            
+            # Predefined playbook values fallback
+            if node.id in ["critical", "high", "medium", "low", "enrichment_failed", "unknown_requires_review"]:
+                return node.id
+                
             return None  # Default undefined variable to None
             
         elif isinstance(node, ast.Constant):

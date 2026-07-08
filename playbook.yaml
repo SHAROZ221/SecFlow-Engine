@@ -18,11 +18,13 @@ steps:
     action: decide_severity
     thresholds:
       critical: 75   # abuseConfidenceScore >= 75
+      high: 50       # abuseConfidenceScore >= 50
       medium: 25     # abuseConfidenceScore >= 25
+      low: 0         # abuseConfidenceScore >= 0
 
   - id: contain
     action: contain_host
-    condition: "severity == critical"
+    condition: "severity in ['critical', 'high']"
     mode: dry_run    # dry_run | live
 
   - id: ticket
@@ -31,4 +33,4 @@ steps:
 
   - id: notify
     action: send_notification
-    condition: "severity in [critical, medium]"
+    condition: "severity in ['critical', 'high', 'medium', 'enrichment_failed', 'unknown_requires_review']"

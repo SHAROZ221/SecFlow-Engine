@@ -37,12 +37,24 @@ def load_yaml(path):
 
 
 def decide_severity_action(score: int, thresholds: dict) -> dict:
-    if score >= thresholds["critical"]:
+    critical_t = thresholds.get("critical", 75)
+    high_t = thresholds.get("high", 50)
+    medium_t = thresholds.get("medium", 25)
+    low_t = thresholds.get("low", 0)
+
+    if not isinstance(score, (int, float)) or score < 0 or score > 100:
+        return {"severity": "unknown_requires_review"}
+
+    if score >= critical_t:
         severity = "critical"
-    elif score >= thresholds["medium"]:
+    elif score >= high_t:
+        severity = "high"
+    elif score >= medium_t:
         severity = "medium"
-    else:
+    elif score >= low_t:
         severity = "low"
+    else:
+        severity = "unknown_requires_review"
     return {"severity": severity}
 
 
@@ -141,11 +153,19 @@ def run_playbook(alert: dict, playbook: dict, contain_mode: str = "dry_run", log
                 result = action_func(ip)
                 context["abuseConfidenceScore"] = result.get("abuseConfidenceScore", 0)
                 context["enrichment"] = result
-                log_msg(f"[+] Enriched IP {ip} -> Abuse confidence score: {context['abuseConfidenceScore']}%")
+                if result.get("enrichment_failed"):
+                    context["enrichment_failed"] = True
+                    log_msg(f"[-] Enrichment failed for IP {ip}: {result.get('error_msg') or result.get('source')}")
+                else:
+                    context["enrichment_failed"] = False
+                    log_msg(f"[+] Enriched IP {ip} -> Abuse confidence score: {context['abuseConfidenceScore']}%")
 
             elif action_name == "decide_severity":
-                thresholds = step.get("thresholds", {"critical": 75, "medium": 25})
-                result = action_func(context["abuseConfidenceScore"], thresholds)
+                if context.get("enrichment_failed"):
+                    result = {"severity": "enrichment_failed"}
+                else:
+                    thresholds = step.get("thresholds", {"critical": 75, "high": 50, "medium": 25, "low": 0})
+                    result = action_func(context["abuseConfidenceScore"], thresholds)
                 context["severity"] = result.get("severity", "low")
                 log_msg(f"[+] Severity decided -> {context['severity'].upper()}")
 
@@ -159,15 +179,29 @@ def run_playbook(alert: dict, playbook: dict, contain_mode: str = "dry_run", log
             elif action_name == "open_ticket":
                 severity = context["severity"]
                 ip = alert.get("indicator_value")
-                summary = (
-                    f"Alert {alert.get('alert_id')} on host {alert.get('affected_host')}: "
-                    f"indicator {ip} scored {context.get('abuseConfidenceScore', 0)} "
-                    f"(severity={severity})"
-                )
+                if severity == "enrichment_failed":
+                    summary = (
+                        f"Alert {alert.get('alert_id')} on host {alert.get('affected_host')}: "
+                        f"enrichment failed for indicator {ip}. Flagged for manual review."
+                    )
+                elif severity == "unknown_requires_review":
+                    summary = (
+                        f"Alert {alert.get('alert_id')} on host {alert.get('affected_host')}: "
+                        f"unknown/invalid score for indicator {ip}. Flagged for manual review."
+                    )
+                else:
+                    summary = (
+                        f"Alert {alert.get('alert_id')} on host {alert.get('affected_host')}: "
+                        f"indicator {ip} scored {context.get('abuseConfidenceScore', 0)} "
+                        f"(severity={severity})"
+                    )
                 result = action_func(alert.get("alert_id"), ip, severity, summary)
                 context["ticket_id"] = result.get("ticket_id")
                 context["ticket"] = result
-                log_msg(f"[+] Ticket opened -> Ticket ID: {context['ticket_id']}, Status: {result.get('status')}")
+                if result.get("merged"):
+                    log_msg(f"[+] Duplicate alert detected -> Merged into existing Ticket ID: #{context['ticket_id']}")
+                else:
+                    log_msg(f"[+] Ticket opened -> Ticket ID: {context['ticket_id']}, Status: {result.get('status')}")
 
             elif action_name == "send_notification":
                 severity = context["severity"]
@@ -222,6 +256,12 @@ def main():
     except Exception as e:
         print(f"[-] Error loading input files: {e}")
         sys.exit(1)
+
+    if args.live_contain:
+        confirm = input("⚠️ WARNING: Live Containment is requested. This will execute real EDR/firewall actions. Proceed? (y/N): ")
+        if confirm.lower().strip() != 'y':
+            print("[-] Cancelled by user. Exiting.")
+            sys.exit(0)
 
     mode = "live" if args.live_contain else "dry_run"
 

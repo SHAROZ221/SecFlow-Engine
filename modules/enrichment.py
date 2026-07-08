@@ -27,14 +27,15 @@ def enrich_ip(ip_address: str) -> dict:
     api_key = os.getenv("ABUSEIPDB_API_KEY")
 
     if not api_key:
-        # Safe fallback so the engine still runs end-to-end without a key
         return {
             "ip": ip_address,
             "abuseConfidenceScore": 0,
             "countryCode": "N/A",
             "isp": "N/A",
             "totalReports": 0,
-            "source": "mock (no ABUSEIPDB_API_KEY set)",
+            "source": "error: ABUSEIPDB_API_KEY is not configured",
+            "enrichment_failed": True,
+            "error_msg": "ABUSEIPDB_API_KEY is not configured"
         }
 
     headers = {"Accept": "application/json", "Key": api_key}
@@ -51,6 +52,7 @@ def enrich_ip(ip_address: str) -> dict:
             "isp": data.get("isp", "N/A"),
             "totalReports": data.get("totalReports", 0),
             "source": "AbuseIPDB (live)",
+            "enrichment_failed": False
         }
     except requests.RequestException as e:
         return {
@@ -60,4 +62,6 @@ def enrich_ip(ip_address: str) -> dict:
             "isp": "N/A",
             "totalReports": 0,
             "source": f"error: {e}",
+            "enrichment_failed": True,
+            "error_msg": str(e)
         }

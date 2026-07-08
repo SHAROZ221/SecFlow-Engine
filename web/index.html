@@ -4,629 +4,673 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SecFlow Engine - SOAR Dashboard</title>
-  <!-- Google Fonts Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css?v=2">
 </head>
 <body>
-  <div class="glow-bg"></div>
-  <header>
-    <div class="logo">
-      <span class="icon">⚡</span>
-      <h1>SecFlow Engine</h1>
-      <span class="badge">SOAR Engine v1.1</span>
+<div class="app-shell">
+
+  <!-- ===== ICON SIDEBAR ===== -->
+  <nav class="icon-sidebar">
+    <div class="sidebar-brand">🛡️</div>
+    <button class="nav-btn active" title="Dashboard">📊</button>
+    <button class="nav-btn" title="Threats">⚠️</button>
+    <button class="nav-btn" title="Network">🌐</button>
+    <button class="nav-btn" title="Assets">📁</button>
+    <button class="nav-btn" title="Compliance">📜</button>
+    <button class="nav-btn" title="Reports">📝</button>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-bottom">
+      <button class="nav-btn" title="Settings" onclick="openSettings()">⚙️</button>
+      <div class="sidebar-avatar">S</div>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-icon btn-settings" onclick="openSettings()" title="Settings">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </button>
+  </nav>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area">
+
+    <!-- TOP BAR -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <span class="brand-icon">⚡</span>
+        <span class="brand-name">SecFlow Engine</span>
+        <span class="brand-badge">SOAR v1.1</span>
+      </div>
+      <div class="top-bar-right">
+        <button class="icon-btn" title="Notifications">🔔</button>
+      </div>
+    </header>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Open Cases</div>
+        <div class="stat-value" id="metric-open-cases">0</div>
+        <div class="stat-sub">Active queue</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Critical Cases</div>
+        <div class="stat-value red" id="metric-critical-cases">0</div>
+        <div class="stat-sub">Needs intervention</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Run</div>
+        <div class="stat-value blue" id="metric-last-run">IDLE</div>
+        <div class="stat-sub">Execution stream</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EDR Live Mode</div>
+        <div class="stat-value" id="metric-live-mode">OFF</div>
+        <div class="stat-sub">Containment</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Engine Status</div>
+        <div class="stat-value green"><span class="status-dot"></span> ACTIVE</div>
+        <div class="stat-sub">API Listener</div>
+      </div>
     </div>
-  </header>
 
-  <main class="dashboard-grid">
-    <!-- LEFT PANEL: Alert Ingestion -->
-    <section class="card glass alert-ingestion">
-      <div class="card-header">
-        <h2>Ingest Alert</h2>
-        <p>Trigger automated SOAR playbooks</p>
-      </div>
+    <!-- THREE COLUMN GRID -->
+    <div class="three-col">
 
-      <div class="form-group">
-        <label for="preset-select">Alert Presets</label>
-        <select id="preset-select" onchange="loadPreset()">
-          <option value="">-- Custom Alert --</option>
-          <option value="bruteforce">SSH Brute Force (High Severity IP)</option>
-          <option value="tor">Tor Exit Node Detection (Critical IP)</option>
-          <option value="portscan">Host Portscan (Low Severity IP)</option>
-        </select>
-      </div>
-
-      <hr class="separator">
-
-      <form id="alert-form" onsubmit="triggerPlaybook(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="alert_id">Alert ID</label>
-            <input type="text" id="alert_id" required value="ALRT-1042">
-          </div>
-          <div class="form-group">
-            <label for="source">Source</label>
-            <input type="text" id="source" required value="Wazuh">
+      <!-- COL 1: INGEST ALERT -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-text">
+            <h2>Ingest Alert</h2>
+            <p>Trigger automated SOAR playbooks</p>
           </div>
         </div>
-
-        <div class="form-group">
-          <label for="rule_description">Rule Description</label>
-          <input type="text" id="rule_description" required value="Multiple failed SSH logins from external IP">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="indicator_value">Indicator (IP)</label>
-            <input type="text" id="indicator_value" required value="185.220.101.45">
-          </div>
-          <div class="form-group">
-            <label for="affected_host">Affected Host</label>
-            <input type="text" id="affected_host" required value="web-srv-03">
-          </div>
-        </div>
-
-        <div class="form-row form-toggles">
-          <div class="toggle-group">
-            <span class="toggle-label">Live Containment</span>
-            <label class="switch">
-              <input type="checkbox" id="live_contain">
-              <span class="slider round"></span>
-            </label>
-          </div>
-        </div>
-
-        <button type="submit" id="submit-btn" class="btn primary-btn">
-          <span>Run Playbook</span>
-          <span class="loader-spinner hidden"></span>
-        </button>
-      </form>
-    </section>
-
-    <!-- CENTER PANEL: Pipeline Tracker & Terminal -->
-    <section class="card glass pipeline-tracker">
-      <div class="card-header">
-        <h2>Playbook Execution</h2>
-        <p id="execution-subtitle">Waiting for trigger...</p>
-      </div>
-
-      <div class="pipeline-container">
-        <!-- Step 1: Enrich -->
-        <div class="pipeline-step" id="step-enrich">
-          <div class="step-status pending">
-            <span class="step-number">1</span>
-            <span class="step-icon hidden">✓</span>
-          </div>
-          <div class="step-details">
-            <h3>Enrich Observables</h3>
-            <p class="step-desc">Analyze IP reputation via AbuseIPDB</p>
-            <div class="step-output" id="out-enrich"></div>
-          </div>
-        </div>
-
-        <div class="pipeline-connector" id="conn-enrich"></div>
-
-        <!-- Step 2: Decide -->
-        <div class="pipeline-step" id="step-decide">
-          <div class="step-status pending">
-            <span class="step-number">2</span>
-            <span class="step-icon hidden">✓</span>
-          </div>
-          <div class="step-details">
-            <h3>Decide Severity</h3>
-            <p class="step-desc">Evaluate threat scores against thresholds</p>
-            <div class="step-output" id="out-decide"></div>
-          </div>
-        </div>
-
-        <div class="pipeline-connector" id="conn-decide"></div>
-
-        <!-- Step 3: Contain -->
-        <div class="pipeline-step" id="step-contain">
-          <div class="step-status pending">
-            <span class="step-number">3</span>
-            <span class="step-icon hidden">✓</span>
-          </div>
-          <div class="step-details">
-            <h3>Containment response</h3>
-            <p class="step-desc">Isolate host/block IP using EDR/Firewall rules</p>
-            <div class="step-output" id="out-contain"></div>
-          </div>
-        </div>
-
-        <div class="pipeline-connector" id="conn-contain"></div>
-
-        <!-- Step 4: Ticket -->
-        <div class="pipeline-step" id="step-ticket">
-          <div class="step-status pending">
-            <span class="step-number">4</span>
-            <span class="step-icon hidden">✓</span>
-          </div>
-          <div class="step-details">
-            <h3>Open Incident Ticket</h3>
-            <p class="step-desc">Log case details in SQLite ticket queue</p>
-            <div class="step-output" id="out-ticket"></div>
-          </div>
-        </div>
-
-        <div class="pipeline-connector" id="conn-ticket"></div>
-
-        <!-- Step 5: Notify -->
-        <div class="pipeline-step" id="step-notify">
-          <div class="step-status pending">
-            <span class="step-number">5</span>
-            <span class="step-icon hidden">✓</span>
-          </div>
-          <div class="step-details">
-            <h3>Send Notifications</h3>
-            <p class="step-desc">Broadcast alerts to Telegram bot SOC channel</p>
-            <div class="step-output" id="out-notify"></div>
-          </div>
+        <div class="card-body">
+          <form id="alert-form" onsubmit="triggerPlaybook(event)">
+            <div class="form-group">
+              <label class="form-label">Alert Presets</label>
+              <select class="form-select" id="preset-select" onchange="loadPreset()">
+                <option value="">-- Custom Alert --</option>
+                <option value="bruteforce">SSH Brute-force</option>
+                <option value="tor">Tor Exit Node</option>
+                <option value="portscan">Port Scan</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Alert ID</label>
+                <input type="text" class="form-input" id="alert_id" value="ALRT-1042">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Source</label>
+                <input type="text" class="form-input" id="source" value="Wazuh">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rule Description</label>
+              <input type="text" class="form-input" id="rule_description" value="Multiple failed SSH logins from external IP">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Indicator (IP)</label>
+                <input type="text" class="form-input" id="indicator_value" value="185.220.101.45">
+                <div id="indicator-error" class="validation-error hidden">Enter a valid IPv4 address</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Affected Host</label>
+                <input type="text" class="form-input" id="affected_host" value="web-srv-03">
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                Live Containment
+                <small>⚠ Executes real firewall/EDR rules</small>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="live_contain">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <button type="submit" class="btn-run" id="submit-btn">
+              <span class="loader-spinner hidden"></span>
+              Run Playbook
+            </button>
+          </form>
         </div>
       </div>
 
-      <!-- Realtime console output logs -->
-      <div class="console-log">
-        <div class="console-header">
-          <span>CONSOLE LOGS</span>
+      <!-- COL 2: PLAYBOOK EXECUTION -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-text">
+            <h2>Playbook Execution</h2>
+            <p id="execution-subtitle">Waiting for trigger...</p>
+          </div>
           <span class="pulse-indicator hidden"></span>
         </div>
-        <div class="console-body" id="console-body">
-          <div class="console-placeholder">Playbook output terminal. Logs will stream here.</div>
+        <div class="pipeline-container">
+          <!-- Step 1: Enrich -->
+          <div class="pipeline-step" id="step-enrich">
+            <div class="step-circle pending">
+              <span class="step-number">1</span>
+              <span class="step-icon hidden">✓</span>
+            </div>
+            <div class="step-info">
+              <h3>Enrich Observables</h3>
+              <p>Analyze IP reputation via AbuseIPDB</p>
+              <div class="step-output" id="out-enrich"></div>
+            </div>
+          </div>
+          <div class="pipe-line" id="conn-enrich"></div>
+
+          <!-- Step 2: Decide -->
+          <div class="pipeline-step" id="step-decide">
+            <div class="step-circle pending">
+              <span class="step-number">2</span>
+              <span class="step-icon hidden">✓</span>
+            </div>
+            <div class="step-info">
+              <h3>Decide Severity</h3>
+              <p>Evaluate threat scores against thresholds</p>
+              <div class="step-output" id="out-decide"></div>
+            </div>
+          </div>
+          <div class="pipe-line" id="conn-decide"></div>
+
+          <!-- Step 3: Contain -->
+          <div class="pipeline-step" id="step-contain">
+            <div class="step-circle pending">
+              <span class="step-number">3</span>
+              <span class="step-icon hidden">✓</span>
+            </div>
+            <div class="step-info">
+              <h3>Containment Response</h3>
+              <p>Isolate host/block IP using EDR/Firewall rules</p>
+              <div class="step-output" id="out-contain"></div>
+            </div>
+          </div>
+          <div class="pipe-line" id="conn-contain"></div>
+
+          <!-- Step 4: Ticket -->
+          <div class="pipeline-step" id="step-ticket">
+            <div class="step-circle pending">
+              <span class="step-number">4</span>
+              <span class="step-icon hidden">✓</span>
+            </div>
+            <div class="step-info">
+              <h3>Open Incident Ticket</h3>
+              <p>Log case details in SQLite ticket queue</p>
+              <div class="step-output" id="out-ticket"></div>
+            </div>
+          </div>
+          <div class="pipe-line" id="conn-ticket"></div>
+
+          <!-- Step 5: Notify -->
+          <div class="pipeline-step" id="step-notify">
+            <div class="step-circle pending">
+              <span class="step-number">5</span>
+              <span class="step-icon hidden">✓</span>
+            </div>
+            <div class="step-info">
+              <h3>Send Notifications</h3>
+              <p>Broadcast alerts to Telegram bot SOC channel</p>
+              <div class="step-output" id="out-notify"></div>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
 
-    <!-- RIGHT PANEL: Ticket Table -->
-    <section class="card glass ticketing-queue">
-      <div class="card-header">
-        <div class="header-action-row">
-          <div>
+      <!-- COL 3: TICKETING CENTER -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-text">
             <h2>Ticketing Center</h2>
             <p>SQLite cases database queue</p>
           </div>
-          <button onclick="refreshTickets()" class="btn btn-icon" title="Refresh Tickets">🔄</button>
+          <button class="icon-btn" onclick="refreshTickets()" title="Refresh">🔄</button>
+        </div>
+        <div class="table-wrap">
+          <table id="tickets-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Alert</th>
+                <th>IP / Host</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tickets-body">
+              <tr><td colspan="6" class="table-placeholder">Loading tickets queue...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <div class="table-container">
-        <table id="tickets-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Alert</th>
-              <th>IP / Host</th>
-              <th>Severity</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="tickets-body">
-            <tr>
-              <td colspan="6" class="table-placeholder">Loading tickets queue...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- Settings Modal Overlay -->
-  <div id="settings-modal" class="modal-overlay hidden" onclick="handleOutsideClick(event)">
-    <div class="modal-content glass">
-      <div class="modal-header">
-        <h2>Engine Integrations</h2>
-        <button class="btn-close-x" onclick="closeSettings()">&times;</button>
-      </div>
-      <form id="settings-form" onsubmit="saveSettings(event)">
-        <div class="form-group modal-group">
-          <label for="abuseipdb_api_key">AbuseIPDB API Key</label>
-          <input type="text" id="abuseipdb_api_key" placeholder="Enter key for live IOC enrichment...">
-        </div>
-        <div class="form-group modal-group">
-          <label for="telegram_bot_token">Telegram Bot Token</label>
-          <input type="text" id="telegram_bot_token" placeholder="Enter bot token for live notifications...">
-        </div>
-        <div class="form-group modal-group">
-          <label for="telegram_chat_id">Telegram Chat ID</label>
-          <input type="text" id="telegram_chat_id" placeholder="Enter chat or channel ID...">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
-          <button type="submit" class="btn primary-btn btn-save-settings">Save Settings</button>
-        </div>
-      </form>
     </div>
+
+    <!-- BOTTOM CONSOLE -->
+    <div class="console-panel">
+      <div class="console-head">
+        <span class="console-title">Security Events Log</span>
+        <span class="pulse-indicator hidden"></span>
+      </div>
+      <div class="console-body" id="console-body">
+        <div class="console-placeholder">Playbook output terminal. Logs will stream here.</div>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal-overlay hidden" onclick="handleOutsideClick(event)">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Engine Integrations</h2>
+      <button class="btn-close-x" onclick="closeSettings()">&times;</button>
+    </div>
+    <form id="settings-form" onsubmit="saveSettings(event)">
+      <div class="modal-group">
+        <label for="abuseipdb_api_key">AbuseIPDB API Key</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="abuseipdb_api_key" placeholder="Enter key for live IOC enrichment...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('abuseipdb_api_key', this)">👁</button>
+        </div>
+      </div>
+      <div class="modal-group">
+        <label for="telegram_bot_token">Telegram Bot Token</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="telegram_bot_token" placeholder="Enter bot token for live notifications...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('telegram_bot_token', this)">👁</button>
+        </div>
+      </div>
+      <div class="modal-group">
+        <label for="telegram_chat_id">Telegram Chat ID</label>
+        <input type="text" class="form-input" id="telegram_chat_id" placeholder="Enter chat or channel ID...">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeSettings()">Cancel</button>
+        <button type="submit" class="btn-save">Save Settings</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast-notification hidden"></div>
+<!-- Toast Notification -->
+<div id="toast" class="toast-notification hidden"></div>
 
-  <script>
-    const PRESETS = {
-      bruteforce: {
-        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
-        source: "Wazuh",
-        rule_description: "Multiple failed SSH logins from external IP",
-        indicator_value: "185.220.101.45",
-        affected_host: "web-srv-03",
-        raw_severity: "high"
-      },
-      tor: {
-        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
-        source: "Suricata",
-        rule_description: "Inbound Tor Exit Node connection detected",
-        // Preset IP value triggers critical behavior for mock API or test score
-        indicator_value: "198.51.100.150", 
-        affected_host: "db-prod-01",
-        raw_severity: "critical"
-      },
-      portscan: {
-        alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
-        source: "Snort",
-        rule_description: "External network reconnaissance / portscan",
-        indicator_value: "8.8.8.8",
-        affected_host: "firewall-gw",
-        raw_severity: "low"
-      }
-    };
-
-    function loadPreset() {
-      const select = document.getElementById("preset-select");
-      const val = select.value;
-      if (!val || !PRESETS[val]) return;
-
-      const preset = PRESETS[val];
-      document.getElementById("alert_id").value = preset.alert_id;
-      document.getElementById("source").value = preset.source;
-      document.getElementById("rule_description").value = preset.rule_description;
-      document.getElementById("indicator_value").value = preset.indicator_value;
-      document.getElementById("affected_host").value = preset.affected_host;
+<script>
+  const PRESETS = {
+    bruteforce: {
+      alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+      source: "Wazuh",
+      rule_description: "Multiple failed SSH logins from external IP",
+      indicator_value: "185.220.101.45",
+      affected_host: "web-srv-03",
+      raw_severity: "high"
+    },
+    tor: {
+      alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+      source: "Suricata",
+      rule_description: "Inbound Tor Exit Node connection detected",
+      indicator_value: "198.51.100.150",
+      affected_host: "db-prod-01",
+      raw_severity: "critical"
+    },
+    portscan: {
+      alert_id: "ALRT-" + Math.floor(1000 + Math.random() * 9000),
+      source: "Snort",
+      rule_description: "External network reconnaissance / portscan",
+      indicator_value: "8.8.8.8",
+      affected_host: "firewall-gw",
+      raw_severity: "low"
     }
+  };
 
-    // Refresh tickets queue
-    async function refreshTickets() {
-      try {
-        const response = await fetch("/api/tickets");
-        const tickets = await response.json();
-        const tbody = document.getElementById("tickets-body");
-        tbody.innerHTML = "";
+  let currentPresetSeverity = "high";
 
-        if (tickets.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="table-placeholder">No tickets in database.</td></tr>`;
-          return;
+  function loadPreset() {
+    const select = document.getElementById("preset-select");
+    const val = select.value;
+    if (!val || !PRESETS[val]) { currentPresetSeverity = "high"; return; }
+    const preset = PRESETS[val];
+    document.getElementById("alert_id").value = preset.alert_id;
+    document.getElementById("source").value = preset.source;
+    document.getElementById("rule_description").value = preset.rule_description;
+    document.getElementById("indicator_value").value = preset.indicator_value;
+    document.getElementById("affected_host").value = preset.affected_host;
+    currentPresetSeverity = preset.raw_severity;
+  }
+
+  function isValidIPv4(ip) {
+    const pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = ip.match(pattern);
+    if (!match) return false;
+    return match.slice(1).every(octet => Number(octet) >= 0 && Number(octet) <= 255);
+  }
+
+  async function refreshTickets() {
+    try {
+      const response = await fetch("/api/tickets");
+      const tickets = await response.json();
+      const tbody = document.getElementById("tickets-body");
+      tbody.innerHTML = "";
+
+      let openCount = 0, criticalCount = 0;
+      tickets.forEach(t => {
+        if (t.status === "open") {
+          openCount++;
+          if (t.severity === "critical") criticalCount++;
         }
-
-        tickets.forEach(t => {
-          const tr = document.createElement("tr");
-          
-          let severityClass = "sev-low";
-          if (t.severity === "critical") severityClass = "sev-critical";
-          else if (t.severity === "medium") severityClass = "sev-medium";
-          
-          const statusClass = t.status === "open" ? "status-open" : "status-resolved";
-          const isResolved = t.status === "resolved";
-
-          tr.innerHTML = `
-            <td>#${t.id}</td>
-            <td>
-              <div class="table-title">${t.alert_id}</div>
-              <div class="table-desc">${t.summary.split('|')[0] || t.summary}</div>
-            </td>
-            <td>
-              <div>${t.indicator}</div>
-              <div class="table-desc">Host: ${t.summary.includes('host') ? t.summary.split('host ')[1].split(':')[0] : 'N/A'}</div>
-            </td>
-            <td><span class="badge-severity ${severityClass}">${t.severity}</span></td>
-            <td><span class="badge-status ${statusClass}">${t.status}</span></td>
-            <td>
-              ${isResolved ? '<span class="action-done">Resolved ✓</span>' : `<button class="btn btn-sm btn-resolve" onclick="resolveTicket(${t.id})">Resolve</button>`}
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error("Error fetching tickets:", err);
-      }
-    }
-
-    async function resolveTicket(ticketId) {
-      try {
-        const resp = await fetch(`/api/tickets/${ticketId}/resolve`, { method: "POST" });
-        const result = await resp.json();
-        if (result.status === "success") {
-          refreshTickets();
-        }
-      } catch (err) {
-        console.error("Error resolving ticket:", err);
-      }
-    }
-
-    // Reset pipeline step UI
-    function resetPipelineUI() {
-      const stepIds = ["enrich", "decide", "contain", "ticket", "notify"];
-      stepIds.forEach(id => {
-        const stepEl = document.getElementById(`step-${id}`);
-        const statusEl = stepEl.querySelector(".step-status");
-        statusEl.className = "step-status pending";
-        statusEl.querySelector(".step-number").classList.remove("hidden");
-        statusEl.querySelector(".step-icon").classList.add("hidden");
-        
-        const outputEl = document.getElementById(`out-${id}`);
-        outputEl.innerHTML = "";
-        outputEl.classList.remove("visible");
-
-        const connEl = document.getElementById(`conn-${id}`);
-        if (connEl) connEl.className = "pipeline-connector";
       });
-      
-      const consoleBody = document.getElementById("console-body");
-      consoleBody.innerHTML = "";
+
+      document.getElementById("metric-open-cases").innerText = openCount;
+      document.getElementById("metric-critical-cases").innerText = criticalCount;
+
+      if (tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-placeholder">No tickets in database.</td></tr>`;
+        return;
+      }
+
+      tickets.forEach(t => {
+        const tr = document.createElement("tr");
+        let severityClass = "sev-low";
+        if (t.severity === "critical") severityClass = "sev-critical";
+        else if (t.severity === "high") severityClass = "sev-high";
+        else if (t.severity === "medium") severityClass = "sev-medium";
+        else if (t.severity === "enrichment_failed" || t.severity === "unknown_requires_review") severityClass = "sev-failed-review";
+
+        const statusClass = t.status === "open" ? "status-open" : "status-resolved";
+        const isResolved = t.status === "resolved";
+
+        let hostDisplay = "N/A";
+        if (t.host) { hostDisplay = t.host; }
+        else if (t.summary && t.summary.includes("host ")) { hostDisplay = t.summary.split("host ")[1].split(":")[0]; }
+
+        tr.innerHTML = `
+          <td class="font-mono">#${t.id}</td>
+          <td>
+            <div class="table-title font-mono">${t.alert_id}</div>
+            <div class="table-desc">${t.summary.split('|')[0] || t.summary}</div>
+          </td>
+          <td>
+            <div class="font-mono">${t.indicator}</div>
+            <div class="table-desc">Host: ${hostDisplay}</div>
+          </td>
+          <td><span class="badge badge-severity ${severityClass}">${t.severity}</span></td>
+          <td><span class="badge badge-status ${statusClass}">${t.status}</span></td>
+          <td>
+            ${isResolved ? '<span class="action-done">Resolved ✓</span>' : `<button class="btn-sm" onclick="resolveTicket(${t.id})">Resolve</button>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error("Error fetching tickets:", err);
     }
+  }
 
-    // Set step UI status
-    function setStepStatus(stepId, status, data = null) {
-      const stepEl = document.getElementById(`step-${stepId}`);
-      if (!stepEl) return;
+  async function resolveTicket(ticketId) {
+    try {
+      const resp = await fetch(`/api/tickets/${ticketId}/resolve`, { method: "POST" });
+      const result = await resp.json();
+      if (result.status === "success") refreshTickets();
+    } catch (err) { console.error("Error resolving ticket:", err); }
+  }
 
-      const statusEl = stepEl.querySelector(".step-status");
-      const numberEl = statusEl.querySelector(".step-number");
-      const iconEl = statusEl.querySelector(".step-icon");
-      const outputEl = document.getElementById(`out-${stepId}`);
-      const connEl = document.getElementById(`conn-${stepId}`);
+  function resetPipelineUI() {
+    const stepIds = ["enrich", "decide", "contain", "ticket", "notify"];
+    stepIds.forEach(id => {
+      const stepEl = document.getElementById(`step-${id}`);
+      const circleEl = stepEl.querySelector(".step-circle");
+      circleEl.className = "step-circle pending";
+      circleEl.querySelector(".step-number").classList.remove("hidden");
+      circleEl.querySelector(".step-icon").classList.add("hidden");
 
-      // Reset
-      numberEl.classList.add("hidden");
-      iconEl.classList.add("hidden");
+      const outputEl = document.getElementById(`out-${id}`);
+      outputEl.innerHTML = "";
+      outputEl.classList.remove("visible");
 
-      if (status === "running") {
-        statusEl.className = "step-status running";
-        numberEl.classList.remove("hidden");
-      } else if (status === "success") {
-        statusEl.className = "step-status success";
-        iconEl.classList.remove("hidden");
-        iconEl.innerText = "✓";
-        if (connEl) connEl.className = "pipeline-connector success";
-        
-        if (data) {
-          outputEl.classList.add("visible");
-          if (stepId === "enrich") {
-            outputEl.innerHTML = `<strong>IP:</strong> ${data.ip} | <strong>Score:</strong> ${data.abuseConfidenceScore}% | <strong>ISP:</strong> ${data.isp}`;
-          } else if (stepId === "decide") {
-            outputEl.innerHTML = `<strong>Severity:</strong> <span class="text-${data.severity}">${data.severity.toUpperCase()}</span>`;
-          } else if (stepId === "contain") {
-            outputEl.innerHTML = `<strong>Action:</strong> Host Isolated | <strong>Command:</strong> <code>${data.command}</code>`;
-          } else if (stepId === "ticket") {
-            outputEl.innerHTML = `<strong>Ticket ID:</strong> #${data.ticket_id} | <strong>Status:</strong> ${data.status}`;
-          } else if (stepId === "notify") {
-            outputEl.innerHTML = `<strong>SOC Alert:</strong> Channel Dispatched`;
-          }
-        }
-      } else if (status === "skipped") {
-        statusEl.className = "step-status skipped";
-        iconEl.classList.remove("hidden");
-        iconEl.innerText = "↷";
-        if (connEl) connEl.className = "pipeline-connector skipped";
-        if (data && data.reason) {
-          outputEl.classList.add("visible");
-          outputEl.innerHTML = `<span class="text-skipped">Skipped: ${data.reason}</span>`;
-        }
-      } else if (status === "failed") {
-        statusEl.className = "step-status failed";
-        iconEl.classList.remove("hidden");
-        iconEl.innerText = "✗";
-        if (connEl) connEl.className = "pipeline-connector failed";
-        if (data && data.error) {
-          outputEl.classList.add("visible");
-          outputEl.innerHTML = `<span class="text-failed">Error: ${data.error}</span>`;
-        }
+      const connEl = document.getElementById(`conn-${id}`);
+      if (connEl) connEl.className = "pipe-line";
+    });
+    document.getElementById("console-body").innerHTML = "";
+  }
+
+  function setStepStatus(stepId, status, data = null) {
+    const stepEl = document.getElementById(`step-${stepId}`);
+    if (!stepEl) return;
+    const circleEl = stepEl.querySelector(".step-circle");
+    const numberEl = circleEl.querySelector(".step-number");
+    const iconEl = circleEl.querySelector(".step-icon");
+    const outputEl = document.getElementById(`out-${stepId}`);
+    const connEl = document.getElementById(`conn-${stepId}`);
+
+    numberEl.classList.add("hidden");
+    iconEl.classList.add("hidden");
+
+    if (status === "running") {
+      circleEl.className = "step-circle running";
+      numberEl.classList.remove("hidden");
+    } else if (status === "success") {
+      circleEl.className = "step-circle success";
+      iconEl.classList.remove("hidden");
+      iconEl.innerText = "✓";
+      if (connEl) connEl.className = "pipe-line success";
+      if (data) {
+        outputEl.classList.add("visible");
+        if (stepId === "enrich") outputEl.innerHTML = `<strong>IP:</strong> ${data.ip} | <strong>Score:</strong> ${data.abuseConfidenceScore}% | <strong>ISP:</strong> ${data.isp}`;
+        else if (stepId === "decide") outputEl.innerHTML = `<strong>Severity:</strong> <span class="text-${data.severity}">${data.severity.toUpperCase()}</span>`;
+        else if (stepId === "contain") outputEl.innerHTML = `<strong>Action:</strong> Host Isolated | <strong>Command:</strong> <code>${data.command}</code>`;
+        else if (stepId === "ticket") outputEl.innerHTML = `<strong>Ticket ID:</strong> #${data.ticket_id} | <strong>Status:</strong> ${data.status}`;
+        else if (stepId === "notify") outputEl.innerHTML = `<strong>SOC Alert:</strong> Channel Dispatched`;
+      }
+    } else if (status === "skipped") {
+      circleEl.className = "step-circle skipped";
+      iconEl.classList.remove("hidden");
+      iconEl.innerText = "↷";
+      if (connEl) connEl.className = "pipe-line skipped";
+      if (data && data.reason) {
+        outputEl.classList.add("visible");
+        outputEl.innerHTML = `<span class="text-skipped">Skipped: ${data.reason}</span>`;
+      }
+    } else if (status === "failed") {
+      circleEl.className = "step-circle failed";
+      iconEl.classList.remove("hidden");
+      iconEl.innerText = "✗";
+      if (connEl) connEl.className = "pipe-line failed";
+      if (data && data.error) {
+        outputEl.classList.add("visible");
+        outputEl.innerHTML = `<span class="text-failed">Error: ${data.error}</span>`;
       }
     }
+  }
 
-    async function triggerPlaybook(event) {
-      event.preventDefault();
-      resetPipelineUI();
+  async function triggerPlaybook(event) {
+    event.preventDefault();
+    const indicatorInput = document.getElementById("indicator_value");
+    const indicatorError = document.getElementById("indicator-error");
 
-      const btn = document.getElementById("submit-btn");
-      const spinner = btn.querySelector(".loader-spinner");
-      btn.disabled = true;
-      spinner.classList.remove("hidden");
+    if (!isValidIPv4(indicatorInput.value.trim())) {
+      indicatorError.classList.remove("hidden");
+      indicatorInput.focus();
+      return;
+    }
+    indicatorError.classList.add("hidden");
 
-      document.querySelector(".pulse-indicator").classList.remove("hidden");
-      document.getElementById("execution-subtitle").innerText = "Executing Playbook steps...";
-
-      const payload = {
-        alert_id: document.getElementById("alert_id").value,
-        source: document.getElementById("source").value,
-        rule_description: document.getElementById("rule_description").value,
-        indicator_type: "ip",
-        indicator_value: document.getElementById("indicator_value").value,
-        affected_host: document.getElementById("affected_host").value,
-        live_contain: document.getElementById("live_contain").checked,
-        raw_severity: "high"
-      };
-
-      try {
-        // Trigger playbook execution
-        const response = await fetch("/api/alerts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        const runId = data.run_id;
-
-        // Establish Server-Sent Events stream
-        const eventSource = new EventSource(`/api/runs/${runId}/stream`);
-        const consoleBody = document.getElementById("console-body");
-        let activeStep = "";
-
-        eventSource.onmessage = function(event) {
-          const line = event.data;
-          
-          // Print logs in terminal window
-          const div = document.createElement("div");
-          div.className = "log-line";
-          
-          if (line.startsWith("[-]")) {
-            div.classList.add("log-err");
-          } else if (line.startsWith("[+]")) {
-            div.classList.add("log-ok");
-          }
-          div.innerText = line.replace("__COMPLETED__:", "").replace("__FAILED__:", "");
-          consoleBody.appendChild(div);
-          consoleBody.scrollTop = consoleBody.scrollHeight;
-
-          // Track steps and map status
-          if (line.includes("Step 'enrich'")) {
-            activeStep = "enrich";
-            setStepStatus("enrich", "running");
-          } else if (line.includes("Step 'decide'")) {
-            activeStep = "decide";
-            setStepStatus("decide", "running");
-          } else if (line.includes("Step 'contain'")) {
-            activeStep = "contain";
-            setStepStatus("contain", "running");
-          } else if (line.includes("Step 'ticket'")) {
-            activeStep = "ticket";
-            setStepStatus("ticket", "running");
-          } else if (line.includes("Step 'notify'")) {
-            activeStep = "notify";
-            setStepStatus("notify", "running");
-          }
-
-          // Check dynamic execution completions in streamed payload
-          if (line.startsWith("__COMPLETED__:")) {
-            eventSource.close();
-            const runLog = JSON.parse(line.replace("__COMPLETED__:", ""));
-            
-            // Map final statuses to each pipeline node
-            Object.keys(runLog.steps).forEach(stepId => {
-              const stepResult = runLog.steps[stepId];
-              if (stepResult.status === "success") {
-                setStepStatus(stepId, "success", stepResult);
-              } else if (stepResult.status === "skipped") {
-                setStepStatus(stepId, "skipped", stepResult);
-              } else if (stepResult.status === "failed") {
-                setStepStatus(stepId, "failed", stepResult);
-              }
-            });
-
-            document.getElementById("execution-subtitle").innerText = "Execution completed successfully.";
-            btn.disabled = false;
-            spinner.classList.add("hidden");
-            document.querySelector(".pulse-indicator").classList.add("hidden");
-            
-            refreshTickets();
-          } else if (line.startsWith("__FAILED__:")) {
-            eventSource.close();
-            document.getElementById("execution-subtitle").innerText = "Execution failed.";
-            btn.disabled = false;
-            spinner.classList.add("hidden");
-            document.querySelector(".pulse-indicator").classList.add("hidden");
-            
-            if (activeStep) {
-              setStepStatus(activeStep, "failed", { error: line.replace("__FAILED__:", "") });
-            }
-          }
-        };
-
-        eventSource.onerror = function() {
-          eventSource.close();
-          btn.disabled = false;
-          spinner.classList.add("hidden");
-          document.querySelector(".pulse-indicator").classList.add("hidden");
-        };
-
-      } catch (err) {
-        console.error("Error executing playbook:", err);
-        btn.disabled = false;
-        spinner.classList.add("hidden");
-      }
+    if (document.getElementById("live_contain").checked) {
+      const confirmed = confirm("⚠️ Live Containment is ON.\n\nThis will execute REAL firewall/EDR isolation commands against the affected host. Continue?");
+      if (!confirmed) return;
     }
 
-    // Toast notification utility
-    function showToast(message, isSuccess = true) {
-      const toast = document.getElementById("toast");
-      toast.innerText = message;
-      toast.className = `toast-notification ${isSuccess ? "toast-success" : "toast-error"}`;
-      toast.classList.remove("hidden");
-      setTimeout(() => {
-        toast.classList.add("hidden");
-      }, 3000);
-    }
+    resetPipelineUI();
+    document.getElementById("metric-last-run").innerText = "RUNNING";
 
-    // Settings Modal interactions
-    async function openSettings() {
-      try {
-        const resp = await fetch("/api/settings");
-        const data = await resp.json();
-        
-        document.getElementById("abuseipdb_api_key").value = data.abuseipdb_api_key || "";
-        document.getElementById("telegram_bot_token").value = data.telegram_bot_token || "";
-        document.getElementById("telegram_chat_id").value = data.telegram_chat_id || "";
-        
-        document.getElementById("settings-modal").classList.remove("hidden");
-      } catch (err) {
-        console.error("Failed to load settings:", err);
-        showToast("Failed to fetch settings from server.", false);
-      }
-    }
+    const btn = document.getElementById("submit-btn");
+    const spinner = btn.querySelector(".loader-spinner");
+    btn.disabled = true;
+    spinner.classList.remove("hidden");
 
-    function closeSettings() {
-      document.getElementById("settings-modal").classList.add("hidden");
-    }
+    document.querySelector(".pulse-indicator").classList.remove("hidden");
+    document.getElementById("execution-subtitle").innerText = "Executing Playbook steps...";
 
-    function handleOutsideClick(event) {
-      if (event.target === document.getElementById("settings-modal")) {
-        closeSettings();
-      }
-    }
-
-    async function saveSettings(event) {
-      event.preventDefault();
-      
-      const payload = {
-        abuseipdb_api_key: document.getElementById("abuseipdb_api_key").value,
-        telegram_bot_token: document.getElementById("telegram_bot_token").value,
-        telegram_chat_id: document.getElementById("telegram_chat_id").value
-      };
-      
-      try {
-        const resp = await fetch("/api/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        
-        const res = await resp.json();
-        if (res.status === "success") {
-          showToast("Settings updated successfully!");
-          closeSettings();
-        } else {
-          showToast("Failed to update settings.", false);
-        }
-      } catch (err) {
-        console.error("Failed to save settings:", err);
-        showToast("Error communicating with server settings API.", false);
-      }
-    }
-
-    // Initial load
-    window.onload = function() {
-      refreshTickets();
+    const payload = {
+      alert_id: document.getElementById("alert_id").value,
+      source: document.getElementById("source").value,
+      rule_description: document.getElementById("rule_description").value,
+      indicator_type: "ip",
+      indicator_value: indicatorInput.value.trim(),
+      affected_host: document.getElementById("affected_host").value,
+      live_contain: document.getElementById("live_contain").checked,
+      raw_severity: currentPresetSeverity
     };
-  </script>
+
+    let streamTimeout;
+
+    function stopLoadingState() {
+      btn.disabled = false;
+      spinner.classList.add("hidden");
+      document.querySelector(".pulse-indicator").classList.add("hidden");
+      if (streamTimeout) clearTimeout(streamTimeout);
+    }
+
+    try {
+      const response = await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      const runId = data.run_id;
+      const eventSource = new EventSource(`/api/runs/${runId}/stream`);
+      const consoleBody = document.getElementById("console-body");
+      let activeStep = "";
+
+      streamTimeout = setTimeout(() => {
+        eventSource.close();
+        document.getElementById("execution-subtitle").innerText = "Execution timed out. No response from server.";
+        document.getElementById("metric-last-run").innerText = "TIMEOUT";
+        stopLoadingState();
+      }, 30000);
+
+      eventSource.onmessage = function(event) {
+        const line = event.data;
+        const div = document.createElement("div");
+        div.className = "log-line";
+        if (line.startsWith("[-]")) div.classList.add("log-err");
+        else if (line.startsWith("[+]")) div.classList.add("log-ok");
+        div.innerText = line.replace("__COMPLETED__:", "").replace("__FAILED__:", "");
+        consoleBody.appendChild(div);
+        consoleBody.scrollTop = consoleBody.scrollHeight;
+
+        if (line.includes("Step 'enrich'")) { activeStep = "enrich"; setStepStatus("enrich", "running"); }
+        else if (line.includes("Step 'decide'")) { activeStep = "decide"; setStepStatus("decide", "running"); }
+        else if (line.includes("Step 'contain'")) { activeStep = "contain"; setStepStatus("contain", "running"); }
+        else if (line.includes("Step 'ticket'")) { activeStep = "ticket"; setStepStatus("ticket", "running"); }
+        else if (line.includes("Step 'notify'")) { activeStep = "notify"; setStepStatus("notify", "running"); }
+
+        if (line.startsWith("__COMPLETED__:")) {
+          eventSource.close();
+          const runLog = JSON.parse(line.replace("__COMPLETED__:", ""));
+          Object.keys(runLog.steps).forEach(stepId => {
+            const stepResult = runLog.steps[stepId];
+            if (stepResult.status === "success") setStepStatus(stepId, "success", stepResult);
+            else if (stepResult.status === "skipped") setStepStatus(stepId, "skipped", stepResult);
+            else if (stepResult.status === "failed") setStepStatus(stepId, "failed", stepResult);
+          });
+          document.getElementById("execution-subtitle").innerText = "Execution completed successfully.";
+          document.getElementById("metric-last-run").innerText = "SUCCESS";
+          stopLoadingState();
+          refreshTickets();
+        } else if (line.startsWith("__FAILED__:")) {
+          eventSource.close();
+          document.getElementById("execution-subtitle").innerText = "Execution failed.";
+          document.getElementById("metric-last-run").innerText = "FAILED";
+          stopLoadingState();
+          if (activeStep) setStepStatus(activeStep, "failed", { error: line.replace("__FAILED__:", "") });
+        }
+      };
+
+      eventSource.onerror = function() {
+        eventSource.close();
+        document.getElementById("execution-subtitle").innerText = "Connection to server lost.";
+        document.getElementById("metric-last-run").innerText = "FAILED";
+        stopLoadingState();
+      };
+    } catch (err) {
+      console.error("Error executing playbook:", err);
+      document.getElementById("metric-last-run").innerText = "FAILED";
+      stopLoadingState();
+    }
+  }
+
+  function showToast(message, isSuccess = true) {
+    const toast = document.getElementById("toast");
+    toast.innerText = message;
+    toast.className = `toast-notification ${isSuccess ? "toast-success" : "toast-error"}`;
+    toast.classList.remove("hidden");
+    setTimeout(() => toast.classList.add("hidden"), 3000);
+  }
+
+  function toggleVisibility(fieldId, btnEl) {
+    const input = document.getElementById(fieldId);
+    if (input.type === "password") { input.type = "text"; btnEl.innerText = "🙈"; }
+    else { input.type = "password"; btnEl.innerText = "👁"; }
+  }
+
+  async function openSettings() {
+    try {
+      const resp = await fetch("/api/settings");
+      const data = await resp.json();
+      document.getElementById("abuseipdb_api_key").value = data.abuseipdb_api_key || "";
+      document.getElementById("telegram_bot_token").value = data.telegram_bot_token || "";
+      document.getElementById("telegram_chat_id").value = data.telegram_chat_id || "";
+      document.getElementById("settings-modal").classList.remove("hidden");
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      showToast("Failed to fetch settings from server.", false);
+    }
+  }
+
+  function closeSettings() { document.getElementById("settings-modal").classList.add("hidden"); }
+
+  function handleOutsideClick(event) {
+    if (event.target === document.getElementById("settings-modal")) closeSettings();
+  }
+
+  async function saveSettings(event) {
+    event.preventDefault();
+    const payload = {
+      abuseipdb_api_key: document.getElementById("abuseipdb_api_key").value,
+      telegram_bot_token: document.getElementById("telegram_bot_token").value,
+      telegram_chat_id: document.getElementById("telegram_chat_id").value
+    };
+    try {
+      const resp = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const res = await resp.json();
+      if (res.status === "success") { showToast("Settings updated successfully!"); closeSettings(); }
+      else showToast("Failed to update settings.", false);
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+      showToast("Error communicating with server settings API.", false);
+    }
+  }
+
+  window.onload = function() {
+    refreshTickets();
+    const liveContainCheck = document.getElementById("live_contain");
+    const liveModeEl = document.getElementById("metric-live-mode");
+    function updateLiveModeText() {
+      liveModeEl.innerText = liveContainCheck.checked ? "ON" : "OFF";
+      liveModeEl.className = liveContainCheck.checked ? "stat-value red" : "stat-value";
+    }
+    liveContainCheck.addEventListener("change", updateLiveModeText);
+    updateLiveModeText();
+  };
+</script>
 </body>
 </html>
