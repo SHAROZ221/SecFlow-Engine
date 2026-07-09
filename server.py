@@ -32,6 +32,8 @@ class SettingsPayload(BaseModel):
     abuseipdb_api_key: str = ""
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+    github_token: str = ""
+    github_repo: str = ""
 
 class LoginPayload(BaseModel):
     username: str
@@ -81,6 +83,8 @@ def get_env_settings():
     abuse_key = os.getenv("ABUSEIPDB_API_KEY", "")
     tg_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     tg_chat = os.getenv("TELEGRAM_CHAT_ID", "")
+    git_token = os.getenv("GITHUB_TOKEN", "")
+    git_repo = os.getenv("GITHUB_REPO", "")
     
     def mask_key(k):
         if not k:
@@ -93,6 +97,8 @@ def get_env_settings():
         "abuseipdb_api_key": mask_key(abuse_key),
         "telegram_bot_token": mask_key(tg_token),
         "telegram_chat_id": tg_chat,
+        "github_token": mask_key(git_token),
+        "github_repo": git_repo,
     }
 
 def write_env_settings(payload: SettingsPayload):
@@ -125,6 +131,18 @@ def write_env_settings(payload: SettingsPayload):
         env_dict["TELEGRAM_CHAT_ID"] = new_tg_chat
     else:
         env_dict.pop("TELEGRAM_CHAT_ID", None)
+        
+    new_git_token = payload.github_token.strip()
+    if new_git_token and "..." not in new_git_token:
+        env_dict["GITHUB_TOKEN"] = new_git_token
+    elif not new_git_token:
+        env_dict.pop("GITHUB_TOKEN", None)
+        
+    new_git_repo = payload.github_repo.strip()
+    if new_git_repo:
+        env_dict["GITHUB_REPO"] = new_git_repo
+    else:
+        env_dict.pop("GITHUB_REPO", None)
         
     with open(ENV_PATH, "w") as f:
         for k, v in env_dict.items():

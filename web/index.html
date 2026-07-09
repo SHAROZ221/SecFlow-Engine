@@ -481,6 +481,17 @@
         <label for="telegram_chat_id">Telegram Chat ID</label>
         <input type="text" class="form-input" id="telegram_chat_id" placeholder="Enter chat or channel ID...">
       </div>
+      <div class="modal-group">
+        <label for="github_token">GitHub Access Token (PAT)</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="github_token" placeholder="ghp_...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('github_token', this)">👁</button>
+        </div>
+      </div>
+      <div class="modal-group">
+        <label for="github_repo">Target GitHub Repository</label>
+        <input type="text" class="form-input" id="github_repo" placeholder="username/repo-name">
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeSettings()">Cancel</button>
         <button type="submit" class="btn-save">Save Settings</button>
@@ -819,6 +830,8 @@
       document.getElementById("abuseipdb_api_key").value = data.abuseipdb_api_key || "";
       document.getElementById("telegram_bot_token").value = data.telegram_bot_token || "";
       document.getElementById("telegram_chat_id").value = data.telegram_chat_id || "";
+      document.getElementById("github_token").value = data.github_token || "";
+      document.getElementById("github_repo").value = data.github_repo || "";
       document.getElementById("settings-modal").classList.remove("hidden");
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -837,7 +850,9 @@
     const payload = {
       abuseipdb_api_key: document.getElementById("abuseipdb_api_key").value,
       telegram_bot_token: document.getElementById("telegram_bot_token").value,
-      telegram_chat_id: document.getElementById("telegram_chat_id").value
+      telegram_chat_id: document.getElementById("telegram_chat_id").value,
+      github_token: document.getElementById("github_token").value,
+      github_repo: document.getElementById("github_repo").value
     };
     try {
       const resp = await fetch("/api/settings", {

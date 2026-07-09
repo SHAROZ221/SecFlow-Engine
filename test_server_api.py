@@ -31,7 +31,9 @@ def test_flow():
     test_settings = {
         "abuseipdb_api_key": "TESTAPIKEY123456789",
         "telegram_bot_token": "TELEGRAMBOTTOKEN987654",
-        "telegram_chat_id": "-10022334455"
+        "telegram_chat_id": "-10022334455",
+        "github_token": "GHPAUTHKEY987654321",
+        "github_repo": "SHAROZ221/SecFlow-Engine"
     }
     resp_post = client.post("/api/settings", json=test_settings)
     assert resp_post.status_code == 200
@@ -47,6 +49,8 @@ def test_flow():
     assert new_settings["abuseipdb_api_key"] == "TEST...6789"
     assert new_settings["telegram_bot_token"] == "TELE...7654"
     assert new_settings["telegram_chat_id"] == "-10022334455"
+    assert new_settings["github_token"] == "GHPA...4321"
+    assert new_settings["github_repo"] == "SHAROZ221/SecFlow-Engine"
     print("[+] Masking verification passed.")
 
     print("\n[+] Step 2: Ingesting alert to verify live API lookup attempt...")
@@ -79,7 +83,9 @@ def test_flow():
     clear_settings = {
         "abuseipdb_api_key": "",
         "telegram_bot_token": "",
-        "telegram_chat_id": ""
+        "telegram_chat_id": "",
+        "github_token": "",
+        "github_repo": ""
     }
     client.post("/api/settings", json=clear_settings)
     print("[+] Restored settings back to empty.")
