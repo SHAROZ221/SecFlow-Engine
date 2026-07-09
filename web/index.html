@@ -7,23 +7,72 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=2">
+  <link rel="stylesheet" href="/css/styles.css?v=6">
 </head>
 <body>
 <div class="app-shell">
 
   <!-- ===== ICON SIDEBAR ===== -->
   <nav class="icon-sidebar">
-    <div class="sidebar-brand">🛡️</div>
-    <button class="nav-btn active" id="nav-btn-dashboard" onclick="switchPage('dashboard')" title="Dashboard">📊</button>
-    <button class="nav-btn" id="nav-btn-threats" onclick="switchPage('threats')" title="Threats">⚠️</button>
-    <button class="nav-btn" id="nav-btn-network" onclick="switchPage('network')" title="Network">🌐</button>
-    <button class="nav-btn" id="nav-btn-assets" onclick="switchPage('assets')" title="Assets">📁</button>
-    <button class="nav-btn" id="nav-btn-compliance" onclick="switchPage('compliance')" title="Compliance">📜</button>
-    <button class="nav-btn" id="nav-btn-reports" onclick="switchPage('reports')" title="Reports">📝</button>
+    <div class="sidebar-brand">
+      <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <polyline points="12 8 12 12 15 15"/>
+      </svg>
+    </div>
+    <button class="nav-btn active" id="nav-btn-dashboard" onclick="switchPage('dashboard')" title="Dashboard">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9"></rect>
+        <rect x="14" y="3" width="7" height="5"></rect>
+        <rect x="14" y="12" width="7" height="9"></rect>
+        <rect x="3" y="16" width="7" height="5"></rect>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-threats" onclick="switchPage('threats')" title="Threats">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-network" onclick="switchPage('network')" title="Network">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-assets" onclick="switchPage('assets')" title="Assets">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-compliance" onclick="switchPage('compliance')" title="Compliance">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-reports" onclick="switchPage('reports')" title="Reports">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </button>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-bottom">
-      <button class="nav-btn" title="Settings" onclick="openSettings()">⚙️</button>
+      <button class="nav-btn" title="Settings" onclick="openSettings()">
+        <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
       <div class="avatar-wrapper">
         <div class="sidebar-avatar" id="avatar-btn" title="Logged in as Admin" onclick="toggleProfileDropdown(event)">S</div>
         <div id="profile-dropdown" class="profile-dropdown hidden">
@@ -40,7 +89,12 @@
     <!-- TOP BAR -->
     <header class="top-bar">
       <div class="top-bar-left">
-        <span class="brand-icon">⚡</span>
+        <span class="brand-icon-wrapper">
+          <svg class="header-brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="12 8 12 12 15 15"/>
+          </svg>
+        </span>
         <span class="brand-name">SecFlow Engine</span>
       </div>
       <div class="top-bar-right">
@@ -430,21 +484,33 @@
         <div class="reports-grid">
           <!-- Card 1: Tickets Export -->
           <div class="report-export-card">
-            <span class="report-icon">🎫</span>
+            <span class="report-icon">
+              <svg class="report-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"></path>
+                <path d="M12 5v14"></path>
+              </svg>
+            </span>
             <h3>Incident Tickets Database</h3>
             <p>Download the complete SQLite tickets database history including IDs, rule matches, timestamps, and resolutions as a CSV.</p>
             <button class="btn-export" onclick="exportData('/api/export/tickets')">
-              📥 Export CSV
+              Export CSV
             </button>
           </div>
           
           <!-- Card 2: Runs Export -->
           <div class="report-export-card">
-            <span class="report-icon">📄</span>
+            <span class="report-icon">
+              <svg class="report-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+            </span>
             <h3>Playbook Audit Logs</h3>
             <p>Download structured history of SOAR playbook executions, step-by-step outcomes, and IP confidence statistics as a CSV.</p>
             <button class="btn-export" onclick="exportData('/api/export/runs')">
-              📥 Export CSV
+              Export CSV
             </button>
           </div>
         </div>

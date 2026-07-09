@@ -63,14 +63,27 @@ html, body {
 .sidebar-brand {
   width: 36px;
   height: 36px;
-  background: rgba(125,211,252,0.1);
-  border: 1px solid rgba(125,211,252,0.25);
+  background: rgba(125,211,252,0.06);
+  border: 1px solid rgba(125,211,252,0.2);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
   margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-brand:hover {
+  background: rgba(125,211,252,0.12);
+  border-color: rgba(125,211,252,0.4);
+  box-shadow: 0 0 12px rgba(125,211,252,0.15);
+}
+
+.brand-svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 4px rgba(125,211,252,0.3));
 }
 
 .nav-btn {
@@ -97,6 +110,18 @@ html, body {
 .nav-btn.active {
   background: rgba(125,211,252,0.08);
   color: var(--accent);
+}
+
+.nav-icon-svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+  transition: all 0.15s ease;
+}
+
+.nav-btn.active .nav-icon-svg, .nav-btn:hover .nav-icon-svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 3px rgba(125,211,252,0.3));
 }
 
 .nav-btn.active::before {
@@ -164,7 +189,18 @@ html, body {
   gap: 12px;
 }
 
-.brand-icon { font-size: 1.1rem; }
+.brand-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-brand-svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 4px rgba(125,211,252,0.25));
+}
 
 .brand-name {
   font-family: var(--font-display);
@@ -1336,8 +1372,17 @@ tr:hover td { background: rgba(255,255,255,0.01); }
 }
 
 .report-icon {
-  font-size: 2.2rem;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-svg {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px rgba(125,211,252,0.3));
 }
 
 .report-export-card h3 {
@@ -1384,4 +1429,27 @@ tr:hover td { background: rgba(255,255,255,0.01); }
 .clickable-row:hover td {
   background: rgba(125,211,252,0.03) !important;
 }
+
+.login-brand-panel .brand-logo svg {
+  width: 44px;
+  height: 44px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px rgba(125,211,252,0.4));
+}
+
+.login-feature-svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.login-footer-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
 }
