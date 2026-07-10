@@ -1453,3 +1453,187 @@ tr:hover td { background: rgba(255,255,255,0.01); }
   vertical-align: middle;
   margin-right: 4px;
 }
+
+/* ==========================================================================
+   PLAYBOOK BUILDER VIEW
+   ========================================================================== */
+.playbook-builder-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.builder-sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.builder-sidebar-card h2 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.builder-field {
+  margin-bottom: 16px;
+}
+
+.builder-field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.builder-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.builder-steps-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.builder-steps-panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.steps-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+/* Connective flow line down the middle of steps */
+.steps-flow::before {
+  content: '';
+  position: absolute;
+  left: 28px;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background: var(--border);
+  z-index: 1;
+}
+
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.2s ease;
+  margin-left: 24px;
+}
+
+.step-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(125, 211, 252, 0.05);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.step-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(125, 211, 252, 0.1);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+}
+
+.step-header h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.step-description {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+/* Threshold slider configurations */
+.threshold-sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.slider-group {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+}
+
+.badge-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(125, 211, 252, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.slider-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkbox-group label {
+  font-size: 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}

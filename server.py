@@ -13,6 +13,7 @@ import asyncio
 import threading
 import hashlib
 import secrets
+import yaml
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Request, Response, Cookie
 from fastapi.responses import StreamingResponse, FileResponse, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -673,6 +674,34 @@ def save_settings(payload: SettingsPayload, user: str = Depends(get_session_user
         return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save settings: {e}")
+
+class PlaybookPayload(BaseModel):
+    name: str
+    description: str
+    trigger: dict
+    steps: list
+
+@app.get("/api/playbook")
+def get_playbook(user: str = Depends(get_session_user)):
+    """Loads the active playbook.yaml and returns its parsed JSON dictionary."""
+    try:
+        if os.path.exists(PLAYBOOK_PATH):
+            return load_yaml(PLAYBOOK_PATH)
+        else:
+            raise HTTPException(status_code=404, detail="playbook.yaml not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/playbook")
+def save_playbook(payload: PlaybookPayload, user: str = Depends(get_session_user)):
+    """Writes the updated playbook payload as formatted YAML configuration."""
+    try:
+        data = payload.model_dump()
+        with open(PLAYBOOK_PATH, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write playbook.yaml: {e}")
 
 if __name__ == "__main__":
     import uvicorn

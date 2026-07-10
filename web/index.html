@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=6">
+  <link rel="stylesheet" href="/css/styles.css?v=7">
 </head>
 <body>
 <div class="app-shell">
@@ -63,6 +63,14 @@
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="7 10 12 15 17 10"></polyline>
         <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    </button>
+    <button class="nav-btn" id="nav-btn-playbook-builder" onclick="switchPage('playbook-builder')" title="Playbook Builder">
+      <svg class="nav-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="6" y1="3" x2="6" y2="15"></line>
+        <circle cx="18" cy="6" r="3"></circle>
+        <circle cx="6" cy="18" r="3"></circle>
+        <path d="M18 9a9 9 0 0 1-9 9"></path>
       </svg>
     </button>
     <div class="sidebar-spacer"></div>
@@ -512,6 +520,164 @@
             <button class="btn-export" onclick="exportData('/api/export/runs')">
               Export CSV
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================
+         PAGE 7: PLAYBOOK BUILDER
+         ====================================== -->
+    <div id="page-playbook-builder" class="page-view hidden">
+      <div class="view-header">
+        <div class="view-title">
+          <h1>Interactive Playbook Builder</h1>
+          <p>Visually configure triggers, actions, containment parameters, and threat notification routing rules.</p>
+        </div>
+        <div class="view-actions">
+          <button class="btn-primary" onclick="savePlaybookConfig()">Save Playbook</button>
+          <button class="btn-secondary" style="margin-left: 8px;" onclick="resetPlaybookToDefault()">Reset Defaults</button>
+        </div>
+      </div>
+      <div class="view-body">
+        <div class="playbook-builder-grid">
+          <!-- Left: Meta and Trigger Settings -->
+          <div class="builder-sidebar-card">
+            <h2>General Parameters</h2>
+            <div class="builder-field">
+              <label for="pb-name">Playbook Name</label>
+              <input type="text" id="pb-name" class="form-input" placeholder="e.g. malicious_ip_response">
+            </div>
+            <div class="builder-field">
+              <label for="pb-desc">Description</label>
+              <textarea id="pb-desc" class="form-input builder-textarea" placeholder="Describe playbook operations..."></textarea>
+            </div>
+            
+            <h2 style="margin-top: 24px;">Trigger Tracing</h2>
+            <div class="builder-field">
+              <label for="pb-trig-field">Alert Trigger Field</label>
+              <input type="text" id="pb-trig-field" class="form-input" placeholder="e.g. indicator_type">
+            </div>
+            <div class="builder-field">
+              <label for="pb-trig-val">Trigger Value</label>
+              <input type="text" id="pb-trig-val" class="form-input" placeholder="e.g. ip">
+            </div>
+          </div>
+
+          <!-- Right: Visual Steps Pipeline -->
+          <div class="builder-steps-panel">
+            <h2>Execution Pipeline</h2>
+            <div class="steps-flow">
+              
+              <!-- Step 1: Enrichment -->
+              <div class="step-card" id="step-enrich-card">
+                <div class="step-header">
+                  <div class="step-badge">Step 1</div>
+                  <h3>IOC Reputation Enrichment</h3>
+                </div>
+                <div class="step-content">
+                  <p class="step-description">Performs automatic lookup scanning of IP addresses using AbuseIPDB reputation databases.</p>
+                  <div class="builder-field">
+                    <label for="pb-enrich-field">Reputation Input Mapping</label>
+                    <input type="text" id="pb-enrich-field" class="form-input" placeholder="indicator_value">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2: Decision Thresholds -->
+              <div class="step-card" id="step-decide-card">
+                <div class="step-header">
+                  <div class="step-badge">Step 2</div>
+                  <h3>Severity Thresholds Decision</h3>
+                </div>
+                <div class="step-content">
+                  <p class="step-description">Maps lookup confidence scores (0-100) directly to system incident severity levels.</p>
+                  <div class="threshold-sliders">
+                    <div class="slider-group">
+                      <div class="slider-label">
+                        <span>Critical Severity Threshold</span>
+                        <span id="val-crit" class="badge-value">75</span>
+                      </div>
+                      <input type="range" id="pb-thresh-crit" min="0" max="100" value="75" oninput="document.getElementById('val-crit').innerText=this.value">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-label">
+                        <span>High Severity Threshold</span>
+                        <span id="val-high" class="badge-value">50</span>
+                      </div>
+                      <input type="range" id="pb-thresh-high" min="0" max="100" value="50" oninput="document.getElementById('val-high').innerText=this.value">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-label">
+                        <span>Medium Severity Threshold</span>
+                        <span id="val-med" class="badge-value">25</span>
+                      </div>
+                      <input type="range" id="pb-thresh-med" min="0" max="100" value="25" oninput="document.getElementById('val-med').innerText=this.value">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-label">
+                        <span>Low Severity Threshold</span>
+                        <span id="val-low" class="badge-value">0</span>
+                      </div>
+                      <input type="range" id="pb-thresh-low" min="0" max="100" value="0" oninput="document.getElementById('val-low').innerText=this.value">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3: Containment -->
+              <div class="step-card" id="step-contain-card">
+                <div class="step-header">
+                  <div class="step-badge">Step 3</div>
+                  <h3>Host Containment Action</h3>
+                </div>
+                <div class="step-content">
+                  <p class="step-description">Isolates affected assets automatically from local subnets to prevent lateral movement.</p>
+                  <div class="builder-field">
+                    <label for="pb-contain-cond">Trigger Containment Condition</label>
+                    <input type="text" id="pb-contain-cond" class="form-input" placeholder="severity in ['critical', 'high']">
+                  </div>
+                  <div class="builder-field">
+                    <label for="pb-contain-mode">EDR Action Mode</label>
+                    <select id="pb-contain-mode" class="form-input">
+                      <option value="dry_run">Dry Run (Audit containment commands only)</option>
+                      <option value="live">Live (Execute firewall isolation commands)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4: Ticketing -->
+              <div class="step-card" id="step-ticket-card">
+                <div class="step-header">
+                  <div class="step-badge">Step 4</div>
+                  <h3>Ticketing Center Creation</h3>
+                </div>
+                <div class="step-content">
+                  <p class="step-description">Creates structured database entries and escalates High/Critical items to GitHub Issues.</p>
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="pb-ticket-always" checked>
+                    <label for="pb-ticket-always" style="margin-left: 8px;">Always create local incident ticket database record</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 5: Notifications -->
+              <div class="step-card" id="step-notify-card">
+                <div class="step-header">
+                  <div class="step-badge">Step 5</div>
+                  <h3>Incident Alerts Dispatch</h3>
+                </div>
+                <div class="step-content">
+                  <p class="step-description">Sends high-priority Telegram alerts containing lookup parameters to mapped chat channels.</p>
+                  <div class="builder-field">
+                    <label for="pb-notify-cond">Trigger Alerting Condition</label>
+                    <input type="text" id="pb-notify-cond" class="form-input" placeholder="severity in ['critical', 'high', 'medium', 'enrichment_failed']">
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
@@ -1008,6 +1174,8 @@
       loadAssetsPage();
     } else if (pageId === "compliance") {
       loadCompliancePage();
+    } else if (pageId === "playbook-builder") {
+      loadPlaybookBuilderPage();
     }
   }
 
@@ -1230,6 +1398,160 @@
     // Open CSV download link in a new window or triggering natural browser attachment
     window.location.href = endpoint;
     showToast("Preparing CSV export download...");
+  }
+
+  // F. Playbook Builder Page
+  async function loadPlaybookBuilderPage() {
+    try {
+      const resp = await fetch("/api/playbook");
+      if (!resp.ok) {
+        showToast("Failed to load playbook configuration.");
+        return;
+      }
+      const pb = await resp.json();
+      
+      // Populate General
+      document.getElementById("pb-name").value = pb.name || "";
+      document.getElementById("pb-desc").value = pb.description || "";
+      document.getElementById("pb-trig-field").value = pb.trigger?.alert_field || "";
+      document.getElementById("pb-trig-val").value = pb.trigger?.alert_value || "";
+      
+      // Step 1: Enrich
+      const stepEnrich = pb.steps.find(s => s.id === "enrich");
+      if (stepEnrich) {
+        document.getElementById("pb-enrich-field").value = stepEnrich.input_field || "";
+      }
+      
+      // Step 2: Decide
+      const stepDecide = pb.steps.find(s => s.id === "decide");
+      if (stepDecide && stepDecide.thresholds) {
+        const t = stepDecide.thresholds;
+        document.getElementById("pb-thresh-crit").value = t.critical ?? 75;
+        document.getElementById("pb-thresh-high").value = t.high ?? 50;
+        document.getElementById("pb-thresh-med").value = t.medium ?? 25;
+        document.getElementById("pb-thresh-low").value = t.low ?? 0;
+        
+        document.getElementById("val-crit").innerText = t.critical ?? 75;
+        document.getElementById("val-high").innerText = t.high ?? 50;
+        document.getElementById("val-med").innerText = t.medium ?? 25;
+        document.getElementById("val-low").innerText = t.low ?? 0;
+      }
+      
+      // Step 3: Contain
+      const stepContain = pb.steps.find(s => s.id === "contain");
+      if (stepContain) {
+        document.getElementById("pb-contain-cond").value = stepContain.condition || "";
+        document.getElementById("pb-contain-mode").value = stepContain.mode || "dry_run";
+      }
+      
+      // Step 4: Ticket
+      const stepTicket = pb.steps.find(s => s.id === "ticket");
+      if (stepTicket) {
+        document.getElementById("pb-ticket-always").checked = stepTicket.always_run === true;
+      }
+      
+      // Step 5: Notify
+      const stepNotify = pb.steps.find(s => s.id === "notify");
+      if (stepNotify) {
+        document.getElementById("pb-notify-cond").value = stepNotify.condition || "";
+      }
+      
+    } catch (err) {
+      console.error("Failed to load playbook details:", err);
+      showToast("Connection failed. Is the server running?");
+    }
+  }
+
+  async function savePlaybookConfig() {
+    try {
+      const payload = {
+        name: document.getElementById("pb-name").value.trim(),
+        description: document.getElementById("pb-desc").value.trim(),
+        trigger: {
+          alert_field: document.getElementById("pb-trig-field").value.trim(),
+          alert_value: document.getElementById("pb-trig-val").value.trim()
+        },
+        steps: [
+          {
+            id: "enrich",
+            action: "enrich_ip",
+            input_field: document.getElementById("pb-enrich-field").value.trim()
+          },
+          {
+            id: "decide",
+            action: "decide_severity",
+            thresholds: {
+              critical: parseInt(document.getElementById("pb-thresh-crit").value),
+              high: parseInt(document.getElementById("pb-thresh-high").value),
+              medium: parseInt(document.getElementById("pb-thresh-med").value),
+              low: parseInt(document.getElementById("pb-thresh-low").value)
+            }
+          },
+          {
+            id: "contain",
+            action: "contain_host",
+            condition: document.getElementById("pb-contain-cond").value.trim(),
+            mode: document.getElementById("pb-contain-mode").value
+          },
+          {
+            id: "ticket",
+            action: "open_ticket",
+            always_run: document.getElementById("pb-ticket-always").checked
+          },
+          {
+            id: "notify",
+            action: "send_notification",
+            condition: document.getElementById("pb-notify-cond").value.trim()
+          }
+        ]
+      };
+      
+      const resp = await fetch("/api/playbook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (resp.ok) {
+        showToast("Playbook configured and saved successfully!");
+      } else {
+        const data = await resp.json();
+        showToast(`Save failed: ${data.detail || "Validation Error"}`);
+      }
+    } catch (err) {
+      console.error("Error saving playbook config:", err);
+      showToast("Failed to connect and save playbook.");
+    }
+  }
+
+  function resetPlaybookToDefault() {
+    if (!confirm("Are you sure you want to reset the execution playbook to default rules?")) return;
+    
+    document.getElementById("pb-name").value = "malicious_ip_response";
+    document.getElementById("pb-desc").value = "Automated response playbook for alerts flagging a suspicious/malicious source IP. Enriches the IP, decides severity based on abuse score, contains high-severity hosts (dry-run by default), opens a ticket, and notifies the SOC channel.";
+    document.getElementById("pb-trig-field").value = "indicator_type";
+    document.getElementById("pb-trig-val").value = "ip";
+    
+    document.getElementById("pb-enrich-field").value = "indicator_value";
+    
+    document.getElementById("pb-thresh-crit").value = 75;
+    document.getElementById("pb-thresh-high").value = 50;
+    document.getElementById("pb-thresh-med").value = 25;
+    document.getElementById("pb-thresh-low").value = 0;
+    
+    document.getElementById("val-crit").innerText = 75;
+    document.getElementById("val-high").innerText = 50;
+    document.getElementById("val-med").innerText = 25;
+    document.getElementById("val-low").innerText = 0;
+    
+    document.getElementById("pb-contain-cond").value = "severity in ['critical', 'high']";
+    document.getElementById("pb-contain-mode").value = "dry_run";
+    
+    document.getElementById("pb-ticket-always").checked = true;
+    
+    document.getElementById("pb-notify-cond").value = "severity in ['critical', 'high', 'medium', 'enrichment_failed', 'unknown_requires_review']";
+    
+    savePlaybookConfig();
   }
 
   window.onload = async function() {

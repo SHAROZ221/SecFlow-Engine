@@ -140,6 +140,34 @@ def test_flow():
     checked_ticket = next(t for t in tickets_final if t["id"] == ticket_id)
     print(f"[+] Checked ticket #{ticket_id} status -> {checked_ticket.get('status')}")
     
+    print("\n[+] Step 7: Testing Playbook Editor API (GET and POST)...")
+    resp_get_pb = client.get("/api/playbook")
+    assert resp_get_pb.status_code == 200, "Failed to GET playbook"
+    orig_pb = resp_get_pb.json()
+    print(f"[+] Loaded original playbook: {orig_pb['name']}")
+    
+    # Modify a value
+    modified_pb = orig_pb.copy()
+    modified_pb["name"] = "test_playbook_mod"
+    modified_pb["description"] = "Temporary test description for API validation"
+    
+    resp_post_pb = client.post("/api/playbook", json=modified_pb)
+    assert resp_post_pb.status_code == 200, f"Failed to POST modified playbook: {resp_post_pb.text}"
+    print("[+] Modified playbook saved successfully.")
+    
+    # Verify the changes
+    resp_get_pb2 = client.get("/api/playbook")
+    assert resp_get_pb2.status_code == 200
+    updated_pb = resp_get_pb2.json()
+    assert updated_pb["name"] == "test_playbook_mod"
+    assert updated_pb["description"] == "Temporary test description for API validation"
+    print("[+] Verified changed name and description in playbook.")
+    
+    # Restore original playbook
+    resp_restore_pb = client.post("/api/playbook", json=orig_pb)
+    assert resp_restore_pb.status_code == 200, "Failed to restore original playbook"
+    print("[+] Restored original playbook configuration successfully.")
+
     if checked_ticket.get("status") == "resolved":
         print("\n[++] ALL IN-MEMORY API AND INTEGRATION TESTS PASSED SUCCESSFULLY! backend is fully operational.")
         return True
