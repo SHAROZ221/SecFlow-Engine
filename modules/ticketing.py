@@ -10,6 +10,11 @@ import os
 import datetime
 import requests
 
+try:
+    import dotenv
+except ImportError:
+    dotenv = None
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "evidence", "tickets.db")
 
 
@@ -34,6 +39,12 @@ def _init_db():
 
 
 def open_ticket(alert_id: str, indicator: str, severity: str, summary: str) -> dict:
+    # Load .env so Jira and GitHub env vars are available
+    if dotenv:
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        if os.path.exists(env_path):
+            dotenv.load_dotenv(env_path, override=True)
+
     conn = _init_db()
     
     # Deduplication check: check if an open ticket for the same alert_id and indicator already exists
@@ -100,6 +111,44 @@ def open_ticket(alert_id: str, indicator: str, severity: str, summary: str) -> d
         except Exception as e:
             # Silent fallback to prevent halting execution if GitHub API fails
             print(f"[-] GitHub escalation failed: {e}")
+
+    # Jira Escalation Logic
+    jira_url = os.getenv('JIRA_BASE_URL')
+    jira_email = os.getenv('JIRA_EMAIL')
+    jira_token = os.getenv('JIRA_API_TOKEN')
+    jira_project = os.getenv('JIRA_PROJECT_KEY')
+
+    if jira_url and jira_email and jira_token and jira_project and severity in ['high', 'critical']:
+        try:
+            from requests.auth import HTTPBasicAuth
+            api_endpoint = f'{jira_url.rstrip("/")}/rest/api/3/issue'
+            jira_payload = {
+                'fields': {
+                    'project': {'key': jira_project},
+                    'summary': f'[SecFlow] {severity.upper()} - {alert_id} | IP {indicator}',
+                    'description': {
+                        'type': 'doc',
+                        'version': 1,
+                        'content': [{
+                            'type': 'paragraph',
+                            'content': [{'type': 'text', 'text': summary}]
+                        }]
+                    },
+                    'issuetype': {'name': 'Task'}
+                }
+            }
+            resp = requests.post(
+                api_endpoint,
+                json=jira_payload,
+                auth=HTTPBasicAuth(jira_email, jira_token),
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            if resp.status_code == 201:
+                jira_key = resp.json().get('key', '')
+                summary = f'{summary} | Jira: {jira_key}'
+        except Exception as e:
+            print(f'[-] Jira escalation failed: {e}')
 
     cur = conn.execute(
         "INSERT INTO tickets (alert_id, indicator, severity, status, created_at, summary) "

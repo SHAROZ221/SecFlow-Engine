@@ -35,6 +35,12 @@ class SettingsPayload(BaseModel):
     telegram_chat_id: str = ""
     github_token: str = ""
     github_repo: str = ""
+    slack_webhook_url: str = ""
+    discord_webhook_url: str = ""
+    jira_base_url: str = ""
+    jira_email: str = ""
+    jira_api_token: str = ""
+    jira_project_key: str = ""
 
 class LoginPayload(BaseModel):
     username: str
@@ -86,6 +92,12 @@ def get_env_settings():
     tg_chat = os.getenv("TELEGRAM_CHAT_ID", "")
     git_token = os.getenv("GITHUB_TOKEN", "")
     git_repo = os.getenv("GITHUB_REPO", "")
+    slack_url = os.getenv('SLACK_WEBHOOK_URL', '')
+    discord_url = os.getenv('DISCORD_WEBHOOK_URL', '')
+    jira_url = os.getenv('JIRA_BASE_URL', '')
+    jira_email = os.getenv('JIRA_EMAIL', '')
+    jira_token = os.getenv('JIRA_API_TOKEN', '')
+    jira_project = os.getenv('JIRA_PROJECT_KEY', '')
     
     def mask_key(k):
         if not k:
@@ -100,6 +112,12 @@ def get_env_settings():
         "telegram_chat_id": tg_chat,
         "github_token": mask_key(git_token),
         "github_repo": git_repo,
+        'slack_webhook_url': mask_key(slack_url),
+        'discord_webhook_url': mask_key(discord_url),
+        'jira_base_url': jira_url,
+        'jira_email': jira_email,
+        'jira_api_token': mask_key(jira_token),
+        'jira_project_key': jira_project,
     }
 
 def write_env_settings(payload: SettingsPayload):
@@ -144,6 +162,42 @@ def write_env_settings(payload: SettingsPayload):
         env_dict["GITHUB_REPO"] = new_git_repo
     else:
         env_dict.pop("GITHUB_REPO", None)
+
+    new_slack = payload.slack_webhook_url.strip()
+    if new_slack and '...' not in new_slack:
+        env_dict['SLACK_WEBHOOK_URL'] = new_slack
+    elif not new_slack:
+        env_dict.pop('SLACK_WEBHOOK_URL', None)
+
+    new_discord = payload.discord_webhook_url.strip()
+    if new_discord and '...' not in new_discord:
+        env_dict['DISCORD_WEBHOOK_URL'] = new_discord
+    elif not new_discord:
+        env_dict.pop('DISCORD_WEBHOOK_URL', None)
+
+    new_jira_url = payload.jira_base_url.strip()
+    if new_jira_url:
+        env_dict['JIRA_BASE_URL'] = new_jira_url
+    else:
+        env_dict.pop('JIRA_BASE_URL', None)
+
+    new_jira_email = payload.jira_email.strip()
+    if new_jira_email:
+        env_dict['JIRA_EMAIL'] = new_jira_email
+    else:
+        env_dict.pop('JIRA_EMAIL', None)
+
+    new_jira_token = payload.jira_api_token.strip()
+    if new_jira_token and '...' not in new_jira_token:
+        env_dict['JIRA_API_TOKEN'] = new_jira_token
+    elif not new_jira_token:
+        env_dict.pop('JIRA_API_TOKEN', None)
+
+    new_jira_project = payload.jira_project_key.strip()
+    if new_jira_project:
+        env_dict['JIRA_PROJECT_KEY'] = new_jira_project
+    else:
+        env_dict.pop('JIRA_PROJECT_KEY', None)
         
     with open(ENV_PATH, "w") as f:
         for k, v in env_dict.items():
@@ -703,7 +757,66 @@ def save_playbook(payload: PlaybookPayload, user: str = Depends(get_session_user
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to write playbook.yaml: {e}")
 
+from modules.report_generator import generate_incident_pdf
+
+@app.get('/api/report/{alert_id}')
+def generate_report(alert_id: str, user: str = Depends(get_session_user)):
+    """Generates a PDF incident response report for a specific alert."""
+    run_logs = load_all_run_logs()
+    # Find the most recent run log for this alert_id
+    target_log = None
+    for r in run_logs:
+        if r.get('alert_id') == alert_id:
+            target_log = r
+            break
+    if not target_log:
+        raise HTTPException(status_code=404, detail=f'No run log found for alert {alert_id}')
+    
+    # Find ticket info from SQLite
+    ticket = {}
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute('SELECT * FROM tickets WHERE alert_id = ? ORDER BY id DESC LIMIT 1', (alert_id,))
+        row = cursor.fetchone()
+        if row:
+            ticket = dict(row)
+        conn.close()
+    except Exception:
+        pass
+    
+    pdf_bytes = generate_incident_pdf(alert_id, target_log, ticket)
+    return Response(
+        content=pdf_bytes,
+        media_type='application/pdf',
+        headers={'Content-Disposition': f'attachment; filename=SecFlow_Incident_{alert_id}.pdf'}
+    )
+
+from modules.webhook_notify import send_slack_webhook, send_discord_webhook
+from modules.jira_integration import create_jira_issue
+
+class WebhookTestPayload(BaseModel):
+    channel: str  # 'slack', 'discord', 'jira'
+    message: str = 'SecFlow Engine test notification'
+
+@app.post('/api/test-webhook')
+def test_webhook(payload: WebhookTestPayload, user: str = Depends(get_session_user)):
+    """Sends a test message to the specified webhook channel."""
+    try:
+        if payload.channel == 'slack':
+            return send_slack_webhook(payload.message)
+        elif payload.channel == 'discord':
+            return send_discord_webhook(payload.message)
+        elif payload.channel == 'jira':
+            result = create_jira_issue('TEST-0001', '0.0.0.0', 'low', payload.message)
+            return result
+        else:
+            raise HTTPException(status_code=400, detail='Invalid channel. Use slack, discord, or jira.')
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Webhook test failed: {e}')
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
-

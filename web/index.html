@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css?v=7">
+  <link rel="stylesheet" href="/css/styles.css?v=8">
 </head>
 <body>
 <div class="app-shell">
@@ -468,10 +468,11 @@
                 <th>Result</th>
                 <th>Duration</th>
                 <th>Timestamp</th>
+                <th>Report</th>
               </tr>
             </thead>
             <tbody id="compliance-table-body">
-              <tr><td colspan="5" class="table-placeholder">Loading run logs...</td></tr>
+              <tr><td colspan="6" class="table-placeholder">Loading run logs...</td></tr>
             </tbody>
           </table>
         </div>
@@ -722,6 +723,41 @@
       <div class="modal-group">
         <label for="github_repo">Target GitHub Repository</label>
         <input type="text" class="form-input" id="github_repo" placeholder="username/repo-name">
+      </div>
+      <div class="modal-divider"><span>Webhook Integrations</span></div>
+      <div class="modal-group">
+        <label for="slack_webhook_url">Slack Webhook URL</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="slack_webhook_url" placeholder="https://hooks.slack.com/services/...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('slack_webhook_url', this)">&#128065;</button>
+        </div>
+      </div>
+      <div class="modal-group">
+        <label for="discord_webhook_url">Discord Webhook URL</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="discord_webhook_url" placeholder="https://discord.com/api/webhooks/...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('discord_webhook_url', this)">&#128065;</button>
+        </div>
+      </div>
+      <div class="modal-divider"><span>Jira Integration</span></div>
+      <div class="modal-group">
+        <label for="jira_base_url">Jira Base URL</label>
+        <input type="text" class="form-input" id="jira_base_url" placeholder="https://your-org.atlassian.net">
+      </div>
+      <div class="modal-group">
+        <label for="jira_email">Jira Email</label>
+        <input type="text" class="form-input" id="jira_email" placeholder="user@company.com">
+      </div>
+      <div class="modal-group">
+        <label for="jira_api_token">Jira API Token</label>
+        <div class="input-with-toggle">
+          <input type="password" class="form-input" id="jira_api_token" placeholder="Enter Jira API token...">
+          <button type="button" class="btn-eye" onclick="toggleVisibility('jira_api_token', this)">&#128065;</button>
+        </div>
+      </div>
+      <div class="modal-group">
+        <label for="jira_project_key">Jira Project Key</label>
+        <input type="text" class="form-input" id="jira_project_key" placeholder="e.g. SEC, SOAR, OPS">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeSettings()">Cancel</button>
@@ -1063,6 +1099,12 @@
       document.getElementById("telegram_chat_id").value = data.telegram_chat_id || "";
       document.getElementById("github_token").value = data.github_token || "";
       document.getElementById("github_repo").value = data.github_repo || "";
+      document.getElementById("slack_webhook_url").value = data.slack_webhook_url || "";
+      document.getElementById("discord_webhook_url").value = data.discord_webhook_url || "";
+      document.getElementById("jira_base_url").value = data.jira_base_url || "";
+      document.getElementById("jira_email").value = data.jira_email || "";
+      document.getElementById("jira_api_token").value = data.jira_api_token || "";
+      document.getElementById("jira_project_key").value = data.jira_project_key || "";
       document.getElementById("settings-modal").classList.remove("hidden");
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -1083,7 +1125,13 @@
       telegram_bot_token: document.getElementById("telegram_bot_token").value,
       telegram_chat_id: document.getElementById("telegram_chat_id").value,
       github_token: document.getElementById("github_token").value,
-      github_repo: document.getElementById("github_repo").value
+      github_repo: document.getElementById("github_repo").value,
+      slack_webhook_url: document.getElementById("slack_webhook_url").value,
+      discord_webhook_url: document.getElementById("discord_webhook_url").value,
+      jira_base_url: document.getElementById("jira_base_url").value,
+      jira_email: document.getElementById("jira_email").value,
+      jira_api_token: document.getElementById("jira_api_token").value,
+      jira_project_key: document.getElementById("jira_project_key").value
     };
     try {
       const resp = await fetch("/api/settings", {
@@ -1359,14 +1407,14 @@
   async function loadCompliancePage() {
     try {
       const tbody = document.getElementById("compliance-table-body");
-      tbody.innerHTML = `<tr><td colspan="5" class="table-placeholder">Loading audit runs...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="table-placeholder">Loading audit runs...</td></tr>`;
       
       const resp = await fetch("/api/runs");
       const runs = await resp.json();
       
       tbody.innerHTML = "";
       if (runs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="table-placeholder">No playbook execution logs found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="table-placeholder">No playbook execution logs found.</td></tr>`;
         return;
       }
       
@@ -1385,6 +1433,10 @@
           <td><span class="badge ${statusClass}">${r.result}</span></td>
           <td class="font-mono">${r.duration}s</td>
           <td class="font-mono" style="font-size: 0.72rem;">${r.started_at.split('.')[0].replace('T', ' ')}</td>
+          <td><button class="btn-report-dl" onclick="event.stopPropagation(); downloadReport('${r.alert_id}')" title="Download PDF Report">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            PDF
+          </button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -1398,6 +1450,12 @@
     // Open CSV download link in a new window or triggering natural browser attachment
     window.location.href = endpoint;
     showToast("Preparing CSV export download...");
+  }
+
+  // F. PDF Incident Report Download
+  function downloadReport(alertId) {
+    showToast(`Generating PDF report for ${alertId}...`);
+    window.location.href = `/api/report/${alertId}`;
   }
 
   // F. Playbook Builder Page

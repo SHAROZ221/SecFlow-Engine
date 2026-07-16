@@ -1637,3 +1637,86 @@ tr:hover td { background: rgba(255,255,255,0.01); }
   cursor: pointer;
   user-select: none;
 }
+
+/* ======================================
+   PDF Report Download Button
+   ====================================== */
+.btn-report-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-report-dl:hover {
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.22), rgba(56, 189, 248, 0.16));
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(125, 211, 252, 0.15);
+}
+
+.btn-report-dl svg {
+  flex-shrink: 0;
+}
+
+/* ======================================
+   Settings Modal - Section Dividers
+   ====================================== */
+.modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 8px 0;
+  padding: 0;
+}
+
+.modal-divider::before,
+.modal-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.modal-divider span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Make modal scrollable when many fields */
+.modal-content {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
