@@ -106,12 +106,24 @@
         <span class="brand-name">SecFlow Engine</span>
       </div>
       <div class="top-bar-right">
-        <button class="icon-btn" title="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </button>
+        <div class="notification-wrapper">
+          <button class="icon-btn" title="Notifications" onclick="toggleNotificationsDropdown(event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span id="notification-badge" class="badge-count hidden">0</span>
+          </button>
+          <div id="notifications-dropdown" class="notifications-dropdown hidden" onclick="event.stopPropagation()">
+            <div class="notifications-header">
+              <span>Security Events</span>
+              <button onclick="clearNotifications(event)" class="btn-clear-all">Clear All</button>
+            </div>
+            <div class="notifications-list" id="notifications-list">
+              <div class="notification-empty">No new events</div>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1040,6 +1052,26 @@
         consoleBody.appendChild(div);
         consoleBody.scrollTop = consoleBody.scrollHeight;
 
+        // Parse log messages for real-time notifications dropdown updates
+        if (line.includes("[+] Ticket opened")) {
+          const match = line.match(/Ticket ID: #?(\d+)/);
+          const tId = match ? `#${match[1]}` : "";
+          addNotification("Ticket Opened", `SQLite database registered new ticket ${tId} for further analyst investigation.`, "success");
+        } else if (line.includes("[+] Duplicate alert detected")) {
+          addNotification("Alert Deduplicated", "Incident automatically merged into existing open ticket queue.", "info");
+        } else if (line.includes("[+] Contain action status")) {
+          const isLive = line.includes("Mode: live") || line.includes("Executed: True") || line.includes("status -> success");
+          const modeStr = isLive ? "LIVE EDR isolation rules successfully executed on target host." : "Dry-run containment rule validated by SOAR engine.";
+          addNotification("Host Containment", modeStr, isLive ? "error" : "warning");
+        } else if (line.includes("[+] Severity decided")) {
+          const sevStr = line.split("->")[1]?.trim() || "unknown";
+          addNotification("Severity Decided", `Playbook engine computed threat classification to ${sevStr.toUpperCase()}`, "info");
+        } else if (line.includes("[+] Notification sent")) {
+          addNotification("Alert Dispatched", "Real-time threat notification routed to Telegram/Slack channels.", "success");
+        } else if (line.includes("__FAILED__:") || line.includes("[-] Action '")) {
+          addNotification("Execution Failed", "Critical SOAR orchestration failure logged in engine execution logs.", "error");
+        }
+
         if (line.includes("Step 'enrich'")) { activeStep = "enrich"; setStepStatus("enrich", "running"); }
         else if (line.includes("Step 'decide'")) { activeStep = "decide"; setStepStatus("decide", "running"); }
         else if (line.includes("Step 'contain'")) { activeStep = "contain"; setStepStatus("contain", "running"); }
@@ -1055,6 +1087,7 @@
             else if (stepResult.status === "skipped") setStepStatus(stepId, "skipped", stepResult);
             else if (stepResult.status === "failed") setStepStatus(stepId, "failed", stepResult);
           });
+          addNotification("Playbook Completed", `SOAR playbook sequence finalized successfully for Alert ${runLog.alert_id || ''}.`, "success");
           document.getElementById("execution-subtitle").innerText = "Execution completed successfully.";
           document.getElementById("metric-last-run").innerText = "SUCCESS";
           stopLoadingState();
@@ -1168,17 +1201,29 @@
     event.stopPropagation();
     const dropdown = document.getElementById("profile-dropdown");
     dropdown.classList.toggle("hidden");
+    // Close notifications dropdown if open
+    const notifDropdown = document.getElementById("notifications-dropdown");
+    if (notifDropdown) notifDropdown.classList.add("hidden");
   }
 
   // Intercept clicks on the document to close dropdowns when clicking outside
   document.addEventListener("click", function(event) {
     const dropdown = document.getElementById("profile-dropdown");
     const avatarBtn = document.getElementById("avatar-btn");
+    const notifDropdown = document.getElementById("notifications-dropdown");
+    const notifBtn = document.querySelector(".notification-wrapper button");
     
     // Close profile dropdown if click is outside
     if (dropdown && !dropdown.classList.contains("hidden")) {
       if (event.target !== avatarBtn && !dropdown.contains(event.target)) {
         dropdown.classList.add("hidden");
+      }
+    }
+
+    // Close notifications dropdown if click is outside
+    if (notifDropdown && !notifDropdown.classList.contains("hidden")) {
+      if (notifBtn && !notifBtn.contains(event.target) && !notifDropdown.contains(event.target)) {
+        notifDropdown.classList.add("hidden");
       }
     }
   });
@@ -1640,6 +1685,78 @@
     liveContainCheck.addEventListener("change", updateLiveModeText);
     updateLiveModeText();
   };
+
+  // ======================================
+  // Real-Time Notifications State and Renderer
+  // ======================================
+  let notifications = [];
+
+  function toggleNotificationsDropdown(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById("notifications-dropdown");
+    dropdown.classList.toggle("hidden");
+    
+    // Close profile dropdown if open
+    const profileDropdown = document.getElementById("profile-dropdown");
+    if (profileDropdown) profileDropdown.classList.add("hidden");
+  }
+
+  function addNotification(title, desc, type = "info") {
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    notifications.unshift({ title, desc, type, timestamp });
+    
+    // Cap at 15 items to prevent DOM bloat
+    if (notifications.length > 15) {
+      notifications.pop();
+    }
+    
+    renderNotifications();
+    updateNotificationBadge();
+  }
+
+  function clearNotifications(event) {
+    if (event) event.stopPropagation();
+    notifications = [];
+    renderNotifications();
+    updateNotificationBadge();
+  }
+
+  function updateNotificationBadge() {
+    const badge = document.getElementById("notification-badge");
+    const count = notifications.length;
+    if (count > 0) {
+      badge.innerText = count;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  }
+
+  function renderNotifications() {
+    const list = document.getElementById("notifications-list");
+    if (notifications.length === 0) {
+      list.innerHTML = `<div class="notification-empty">No new events</div>`;
+      return;
+    }
+
+    list.innerHTML = notifications.map(n => `
+      <div class="notification-item ${n.type}">
+        <div class="notification-title">${escapeHtml(n.title)}</div>
+        <div class="notification-desc">${escapeHtml(n.desc)}</div>
+        <div class="notification-time">${n.timestamp}</div>
+      </div>
+    `).join("");
+  }
+
+  function escapeHtml(text) {
+    if (!text) return "";
+    return text.toString()
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 </script>
 </body>
 </html>
